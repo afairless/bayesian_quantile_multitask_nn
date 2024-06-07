@@ -11,6 +11,5 @@ def main():
     data = split_data_with_parameters(mvn_components.cases_data)
 
 
-
 if __name__ == '__main__':
     main()

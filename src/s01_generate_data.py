@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split as skl_data_split 
-from pathlib import Path
 
 
 @dataclass
@@ -14,6 +13,8 @@ class MultivariateNormalComponents:
     correlation_matrix: np.ndarray
     covariance: np.ndarray
     cases_data: np.ndarray
+    predictors_column_idxs: np.ndarray = field(default_factory=lambda: np.array([]))
+    response_column_idx: int = -1
 
     def __post_init__(self):
 
@@ -36,6 +37,9 @@ class MultivariateNormalComponents:
         assert (
             self.correlation_matrix.diagonal() == np.ones(dimension_n)).all()
         assert (np.linalg.eig(self.correlation_matrix).eigenvalues >= 0).all()
+
+        self.predictors_column_idxs = np.arange(dimension_n - 1)
+        self.response_column_idx = dimension_n - 1
 
 
 @dataclass
