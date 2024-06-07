@@ -35,24 +35,13 @@ def test_create_correlation_matrix_01(dimension_n: int, seed: int):
     assert (np_eig(result).eigenvalues >= 0).all()
 
 
-def test_dummy_function02_01():
-    """
-    Test input of wrong data type
-    """
+# def test_dummy_function02_01():
+#     """
+#     Test input of wrong data type
+#     """
 
-    input = -1
+#     input = -1
 
-    with pytest.raises(AssertionError):
-        result = dummy_function02(input)
+#     with pytest.raises(AssertionError):
+#         result = dummy_function02(input)
 
-
-def test_dummy_function02_02():
-    """
-    Test valid input
-    """
-
-    input = 1
-
-    result = dummy_function02(input)
-    correct_result = 2
-    assert result == correct_result

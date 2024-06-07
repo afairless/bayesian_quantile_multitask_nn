@@ -14,16 +14,26 @@ class MultivariateNormalComponents:
     data: np.ndarray
 
     def __post_init__(self):
+
+        dimension_n = self.correlation_matrix.shape[0]
+
+        # enforce array shapes
+        assert self.correlation_matrix.shape[1] == dimension_n
+        assert self.means.shape[0] == dimension_n
+        assert self.standard_deviations.shape[0] == dimension_n
+        assert self.covariance.shape[0] == dimension_n
+        assert self.covariance.shape[1] == dimension_n
+        assert self.data.shape[1] == dimension_n
+
+        # enforce standard deviation values
+        assert (self.standard_deviations >= 0).all()
+
+        # enforce correlation matrix element values
+        assert (self.correlation_matrix >= 0).all()
+        assert (self.correlation_matrix <= 1).all()
         assert (
-            self.correlation_matrix.shape[0] == 
-            self.correlation_matrix.shape[1])
-        assert self.means.shape[0] == self.correlation_matrix.shape[0]
-        assert (
-            self.standard_deviations.shape[0] == 
-            self.correlation_matrix.shape[0])
-        assert self.covariance.shape[0] == self.correlation_matrix.shape[0]
-        assert self.covariance.shape[1] == self.correlation_matrix.shape[0]
-        assert self.data.shape[1] == self.correlation_matrix.shape[0]
+            self.correlation_matrix.diagonal() == np.ones(dimension_n)).all()
+        assert (np.linalg.eig(self.correlation_matrix).eigenvalues >= 0).all()
 
 
 def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
@@ -94,6 +104,7 @@ def main():
 
     seed = 50315
     mvnc = create_centered_multivariate_normal_data(cases_n, variables_n, seed)
+    print(mvnc)
 
 
 if __name__ == '__main__':
