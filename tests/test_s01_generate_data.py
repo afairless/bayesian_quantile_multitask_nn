@@ -9,7 +9,7 @@ import hypothesis.strategies as st
 
 from src.s01_generate_data import (
     create_correlation_matrix,
-    create_centered_multivariate_normal_data,
+    create_multivariate_normal_data,
     )
 
 
@@ -52,7 +52,7 @@ def test_multivariate_normal_components_linear_regression_coefficients_01(
     """
 
     cases_n = 300_000
-    mvnc = create_centered_multivariate_normal_data(cases_n, variables_n, seed)
+    mvnc = create_multivariate_normal_data(cases_n, variables_n, seed)
 
     x = mvnc.cases_data[:, mvnc.predictors_column_idxs]
     y = mvnc.cases_data[:, mvnc.response_column_idx]

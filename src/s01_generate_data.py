@@ -97,8 +97,9 @@ def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
     return correlation_matrix
 
 
-def create_centered_multivariate_normal_data(
-    cases_n: int, variables_n: int, seed: int) -> MultivariateNormalComponents:
+def create_multivariate_normal_data(
+    cases_n: int, variables_n: int, seed: int, zero_centered: bool=True
+    ) -> MultivariateNormalComponents:
     """
     Generate multivariate normal data with given numbers of cases and 
         variables, centered at the origin
@@ -109,9 +110,12 @@ def create_centered_multivariate_normal_data(
 
     np.random.seed(seed)
 
-    # variables are zero-centered
-    mvn_means = np.zeros(variables_n)
-    mvn_stds = np.random.randint(1, 100, variables_n) / 10
+    if zero_centered:
+        mvn_means = np.zeros(variables_n)
+    else:
+        mvn_means = np.random.randint(-100, 100, variables_n)
+
+    mvn_stds = np.random.randint(1, 100, variables_n)
     mvn_correlation = create_correlation_matrix(variables_n, seed+1)
     mvn_covariance = np.outer(mvn_stds, mvn_stds) * mvn_correlation
 
@@ -137,8 +141,8 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
     predictors_n = 5
     variables_n = predictors_n + 1
 
-    seed = 50315
-    mvnc = create_centered_multivariate_normal_data(cases_n, variables_n, seed)
+    seed = 50319
+    mvnc = create_multivariate_normal_data(cases_n, variables_n, seed, False)
 
     return mvnc
 

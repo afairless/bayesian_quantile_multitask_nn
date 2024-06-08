@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 
@@ -16,9 +17,12 @@ def main():
     mvn_components = create_data_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
 
+    mvn_components.means
+    np.mean(mvn_components.cases_data, axis=0)
+    mvn_components.standard_deviations
+    np.std(mvn_components.cases_data, axis=0)
+    mvn_components.linear_regression_coefficients
 
-    # calculate coefficients from data, include in mvnc
-    # maybe add means to data
     # scale data
     # https://scikit-learn.org/stable/api/sklearn.preprocessing.html
 
