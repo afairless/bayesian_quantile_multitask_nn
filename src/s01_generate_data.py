@@ -13,8 +13,11 @@ class MultivariateNormalComponents:
     correlation_matrix: np.ndarray
     covariance: np.ndarray
     cases_data: np.ndarray
-    predictors_column_idxs: np.ndarray = field(default_factory=lambda: np.array([]))
+    predictors_column_idxs: np.ndarray = (
+        field(default_factory=lambda: np.array([-1])))
     response_column_idx: int = -1
+    linear_regression_coefficients: np.ndarray = (
+        field(default_factory=lambda: np.array([-1])))
 
     def __post_init__(self):
 
@@ -38,8 +41,14 @@ class MultivariateNormalComponents:
             self.correlation_matrix.diagonal() == np.ones(dimension_n)).all()
         assert (np.linalg.eig(self.correlation_matrix).eigenvalues >= 0).all()
 
+        # set column indices for 'cases_data'
         self.predictors_column_idxs = np.arange(dimension_n - 1)
         self.response_column_idx = dimension_n - 1
+
+        # calculate linear regression coefficients
+        x = self.covariance[:self.response_column_idx, :self.response_column_idx]
+        y = self.covariance[:self.response_column_idx, self.response_column_idx]
+        self.linear_regression_coefficients = np.linalg.inv(x) @ y
 
 
 @dataclass
@@ -124,7 +133,7 @@ def create_centered_multivariate_normal_data(
 
 def create_data_with_parameters() -> MultivariateNormalComponents:
 
-    cases_n = 1000
+    cases_n = 1000000
     predictors_n = 5
     variables_n = predictors_n + 1
 
