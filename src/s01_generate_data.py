@@ -3,6 +3,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split as skl_data_split 
+from sklearn.preprocessing import StandardScaler
 
 
 @dataclass
@@ -66,6 +67,39 @@ class SplitData:
 
         assert self.train.shape[1] == self.valid.shape[1]
         assert self.train.shape[1] == self.test.shape[1]
+
+
+@dataclass
+class ScaledData:
+    
+    scaler: StandardScaler
+    train_x: np.ndarray
+    train_y: np.ndarray
+    valid_x: np.ndarray
+    valid_y: np.ndarray
+    test_x: np.ndarray
+    test_y: np.ndarray
+
+    def __post_init__(self):
+
+        # these assertions are all very straightforward and arguably omittable,
+        #   so long as 'scaler' works as I expect
+        # however, in the spirit of ensuring that my own understanding and
+        #   implementation are correct, I retain them here
+            
+        assert isinstance(self.train_x, np.ndarray)
+        assert isinstance(self.train_y, np.ndarray)
+        assert isinstance(self.valid_x, np.ndarray)
+        assert isinstance(self.valid_y, np.ndarray)
+        assert isinstance(self.test_x, np.ndarray)
+        assert isinstance(self.test_y, np.ndarray)
+
+        assert self.train_x.shape[0] == self.train_y.shape[0]
+        assert self.valid_x.shape[0] == self.valid_y.shape[0]
+        assert self.test_x.shape[0] == self.test_y.shape[0]
+
+        assert self.train_x.shape[1] == self.valid_x.shape[1]
+        assert self.train_x.shape[1] == self.test_x.shape[1]
 
 
 def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
@@ -136,8 +170,11 @@ def create_multivariate_normal_data(
 
 
 def create_data_with_parameters() -> MultivariateNormalComponents:
+    """
+    Create multivariate normal data with standard parameters
+    """
 
-    cases_n = 1000000
+    cases_n = 1_000_000
     predictors_n = 5
     variables_n = predictors_n + 1
 
@@ -148,6 +185,9 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
 
 
 def split_data_3ways(data_array: np.ndarray, seed: int) -> SplitData:
+    """
+    Split data into training, validation, and testing sets
+    """
 
     train_data, non_train_data = skl_data_split(
         data_array, train_size=0.6, random_state=seed)
@@ -167,11 +207,49 @@ def split_data_3ways(data_array: np.ndarray, seed: int) -> SplitData:
 
 
 def split_data_with_parameters(data_array: np.ndarray) -> SplitData:
+    """
+    Split data with standard parameter (i.e., 'seed')
+    """
 
     seed = 411057
     split_data = split_data_3ways(data_array, seed)
 
     return split_data
+
+
+def scale_data(
+    train_data: np.ndarray, valid_data: np.ndarray, test_data: np.ndarray, 
+    predictors_column_idxs: np.ndarray, response_column_idx: int) -> ScaledData:
+    """
+    Scale training, validation, and testing data
+    """
+
+    assert train_data.shape[1] == valid_data.shape[1]
+    assert train_data.shape[1] == test_data.shape[1]
+
+    scaler = StandardScaler().fit(train_data)
+    train = scaler.transform(train_data)
+    assert isinstance(train, np.ndarray)
+    train_x = train[:, predictors_column_idxs]
+    train_y = train[:, response_column_idx]
+
+    valid = scaler.transform(valid_data)
+    assert isinstance(valid, np.ndarray)
+    valid_x = valid[:, predictors_column_idxs]
+    valid_y = valid[:, response_column_idx]
+
+    test = scaler.transform(test_data)
+    assert isinstance(test, np.ndarray)
+    test_x = test[:, predictors_column_idxs]
+    test_y = test[:, response_column_idx]
+
+    scaled_data = ScaledData(
+        scaler, 
+        train_x, train_y, 
+        valid_x, valid_y, 
+        test_x, test_y)
+
+    return scaled_data
 
 
 if __name__ == '__main__':
