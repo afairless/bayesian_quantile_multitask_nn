@@ -1,9 +1,16 @@
 #! /usr/bin/env python3
 
+import json
 import numpy as np
+from pathlib import Path
 from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split as skl_data_split 
 from sklearn.preprocessing import StandardScaler
+
+from src.utilities import (
+    read_text_file, 
+    write_list_to_text_file)
+
 
 
 @dataclass
@@ -252,5 +259,44 @@ def scale_data(
     return scaled_data
 
 
+def save_data():
+    """
+    Serialize data to disk as JSON files for downstream processing with
+        incompatible development environments
+    """
+
+    output_path = Path.cwd() / 'output' / 'data'
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    mvn_components = create_data_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+
+    data_filenames = [
+        (scaled_data.train_x, 'scaled_data_train_x.json'),
+        (scaled_data.train_y, 'scaled_data_train_y.json'),
+        (scaled_data.test_x,  'scaled_data_test_x.json'),
+        (mvn_components.predictors_column_idxs,  
+         'predictors_column_idxs.json'),
+        (np.array(mvn_components.response_column_idx),  
+         'response_column_idx.json'),
+        ]
+
+
+    for e in data_filenames:
+
+        data_array = e[0]
+        filename = e[1]
+
+        output_filepath = output_path / filename 
+        array_list = data_array.tolist()
+
+        with open(output_filepath, 'w') as json_file:
+            json.dump(array_list, json_file)
+
+
 if __name__ == '__main__':
-    create_data_with_parameters()
+    save_data()

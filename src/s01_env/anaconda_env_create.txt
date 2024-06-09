@@ -1,0 +1,6 @@
+
+mamba create --name distribution_nn01 polars pandas numpy scipy statsmodels matplotlib requests pyarrow pytest hypothesis pystan httpstan arviz pyro5 mlflow xgboost pytorch jax tensorflow scikit-learn 
+
+conda activate distribution_nn01 
+
+mamba env export > environment.yml
