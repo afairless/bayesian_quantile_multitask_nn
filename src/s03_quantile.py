@@ -4,10 +4,12 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 
-from src.s01_generate_data import (
+from src.s01_generate_data.generate_data import (
     create_data_with_parameters, 
     split_data_with_parameters,
     scale_data)
+
+import statsmodels.api as sm
 
 
 def main():
@@ -24,6 +26,21 @@ def main():
     # mvn_components.standard_deviations
     # np.std(mvn_components.cases_data, axis=0)
     # mvn_components.linear_regression_coefficients
+
+    model = sm.QuantReg(scaled_data.train_y[:20], scaled_data.train_x[:20])
+
+    quantiles = np.arange(0.1, 0.91, 0.1)
+    for q in quantiles:
+        results = model.fit(q=q)
+        print(results.summary())
+        # results.summary2()
+
+
+    # dir(results)
+
+
+
+
 
     model = LinearRegression().fit(scaled_data.train_x, scaled_data.train_y)
     predictions_scaled = model.predict(scaled_data.test_x)
@@ -52,6 +69,10 @@ def main():
     # predictions2 = model.predict(test_x)
     # rmse = root_mean_squared_error(test_y, predictions2)
     # rmse
+
+
+
+
 
 
 

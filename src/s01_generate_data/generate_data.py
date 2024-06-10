@@ -134,8 +134,8 @@ def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
 
 
 def create_multivariate_normal_data(
-    cases_n: int, variables_n: int, seed: int, zero_centered: bool=True
-    ) -> MultivariateNormalComponents:
+    cases_n: int, variables_n: int, seed: int, zero_centered: bool=True,
+    noise_factor: int=1) -> MultivariateNormalComponents:
     """
     Generate multivariate normal data with given numbers of cases and 
         variables, centered at the origin
@@ -161,6 +161,10 @@ def create_multivariate_normal_data(
 
     mvn_data = np.random.multivariate_normal(mvn_means, mvn_covariance, cases_n)
 
+    # add noise to the response variable
+    noise = np.random.normal(0, noise_factor * mvn_stds[-1], cases_n)
+    mvn_data[:, -1] += noise
+
     mvnc = MultivariateNormalComponents(
         correlation_matrix=mvn_correlation,
         means=mvn_means,
@@ -177,11 +181,13 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
     """
 
     cases_n = 1_000_000
-    predictors_n = 5
+    predictors_n = 2
     variables_n = predictors_n + 1
+    noise_factor = 1
 
     seed = 50319
-    mvnc = create_multivariate_normal_data(cases_n, variables_n, seed, False)
+    mvnc = create_multivariate_normal_data(
+        cases_n, variables_n, seed, False, noise_factor)
 
     return mvnc
 
@@ -271,16 +277,22 @@ def save_data():
         mvn_components.response_column_idx)
 
     data_filenames = [
+        (mvn_components.means,  'means.json'),
+        (mvn_components.standard_deviations,  'standard_deviations.json'),
+        (mvn_components.correlation_matrix,  'correlation_matrix.json'),
+        (mvn_components.covariance,  'covariance.json'),
+        (mvn_components.predictors_column_idxs,  'predictors_column_idxs.json'),
+        (np.array(mvn_components.response_column_idx), 
+         'response_column_idx.json'),
+        (mvn_components.linear_regression_coefficients, 
+         'linear_regression_coefficients.json'),
         (data.train, 'data_train.json'),
         (data.test,  'data_test.json'),
         (scaled_data.train_x, 'scaled_data_train_x.json'),
         (scaled_data.train_y, 'scaled_data_train_y.json'),
         (scaled_data.test_x,  'scaled_data_test_x.json'),
         (scaled_data.test_y,  'scaled_data_test_y.json'),
-        (mvn_components.predictors_column_idxs,  
-         'predictors_column_idxs.json'),
-        (np.array(mvn_components.response_column_idx),  
-         'response_column_idx.json')]
+        ]
 
 
     for e in data_filenames:
