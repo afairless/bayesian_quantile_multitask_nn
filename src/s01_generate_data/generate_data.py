@@ -7,11 +7,6 @@ from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split as skl_data_split 
 from sklearn.preprocessing import StandardScaler
 
-from src.utilities import (
-    read_text_file, 
-    write_list_to_text_file)
-
-
 
 @dataclass
 class MultivariateNormalComponents:
@@ -276,14 +271,16 @@ def save_data():
         mvn_components.response_column_idx)
 
     data_filenames = [
+        (data.train, 'data_train.json'),
+        (data.test,  'data_test.json'),
         (scaled_data.train_x, 'scaled_data_train_x.json'),
         (scaled_data.train_y, 'scaled_data_train_y.json'),
         (scaled_data.test_x,  'scaled_data_test_x.json'),
+        (scaled_data.test_y,  'scaled_data_test_y.json'),
         (mvn_components.predictors_column_idxs,  
          'predictors_column_idxs.json'),
         (np.array(mvn_components.response_column_idx),  
-         'response_column_idx.json'),
-        ]
+         'response_column_idx.json')]
 
 
     for e in data_filenames:
