@@ -181,7 +181,7 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
     """
 
     cases_n = 1_000_000
-    predictors_n = 2
+    predictors_n = 1
     variables_n = predictors_n + 1
     noise_factor = 1
 

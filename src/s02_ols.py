@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 
-from src.s01_generate_data.generate_data import (
+from s01_generate_data.generate_data import (
     create_data_with_parameters, 
     split_data_with_parameters,
     scale_data)
@@ -42,7 +42,7 @@ def main():
     predictions = x_predictions[:, mvn_components.response_column_idx]
     test_y = data.test[:, mvn_components.response_column_idx]
     rmse = root_mean_squared_error(test_y, predictions)
-    rmse
+    print(rmse)
 
 
     # RMSE without scaling below matches RMSE with scaling above

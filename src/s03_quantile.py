@@ -110,6 +110,92 @@ def plot_regression(
     plt.close()
 
 
+def calculate_perpendicular_slope(slope: float) -> float:
+    """
+    Given the slope of a line, return the perpendicular slope
+    """
+    return - 1 / slope
+
+
+def calculate_angle_given_slope(slope: float) -> float:
+    """
+    Given the slope of a line, return its angle of inclination in radians
+    """
+    return np.arctan(slope)
+
+
+def create_direction_vector(theta):
+    """
+    Modified from ChatGPT
+    Verified to work in 2-dimensional cases and cases where thetas all = 0 
+        (see 'tests' directory)
+
+
+    # for j in range(1, 5):
+    #     theta = [1] * j
+    #     theta_n = len(theta)
+    #     B = np.ones((theta_n,))
+    #     for i in range(theta_n-1):
+    #     # for i in range(1):
+    #         if i == 0:
+    #             print('theta_n', theta_n)
+    #             print('B start', B)
+    #         print(i)
+    #         print(B)
+    #         B *= np.sin(theta[i])
+    #         print(B)
+    #         B = np.insert(B, 0, np.cos(theta[i]))
+    #         print(B)
+
+    #     print('\n')
+    """
+
+    theta_n = len(theta)
+    B = np.ones((theta_n,))
+
+    # original 'for' loop control from ChatGPT:
+    # for i in range(theta_n-1):
+
+    # for i in range(theta_n):
+
+    # 2-dimensional cases and cases where thetas all = 0 require only once 
+    #   through loop
+    for i in range(1):
+        B *= np.sin(theta[i])
+        B = np.insert(B, 0, np.cos(theta[i]))
+
+    B = B.reshape(-1, 1)
+
+    return B
+
+
+def project_matrix_to_line(
+    a_matrix: np.ndarray, line_angle_radians: list[float]) -> np.ndarray:
+
+    assert a_matrix.shape[1] - 1 == len(line_angle_radians)
+
+    # abbreviate for more readable code
+    thetas = line_angle_radians
+
+    # works only for 2 dimensions, i.e., only one angle
+    # projection_matrix = np.array(
+    #     [np.sin(line_angle_radians), 
+    #      np.cos(line_angle_radians)]).reshape(-1, 1)
+
+    # works only for 3 dimensions, i.e., only two angles
+    #   results verified only for cases where thetas all = 0
+    # projection_matrix = np.array([
+    #     np.cos(thetas[0]) * np.sin(thetas[1]), 
+    #     np.sin(thetas)[0] * np.sin(thetas[1]), 
+    #     np.cos(thetas[1])
+    #     ]).reshape(-1, 1)
+
+    projection_matrix = create_direction_vector(thetas)
+    projection = a_matrix @ projection_matrix
+
+    return projection
+
+
 def main():
 
     output_path = Path.cwd() / 'output' / 's03_quantile'
@@ -153,7 +239,7 @@ def main():
 
     output_filename = 'summaries.txt'
     output_filepath = output_path / output_filename
-    write_list_to_text_file(model_results.summaries, output_filepath)
+    write_list_to_text_file(model_results.summaries, output_filepath, True)
 
 
     # plot scatterplot and quantile regression lines over each predictor
@@ -170,9 +256,10 @@ def main():
         line_xs = np.linspace(x_min, x_max, 100)
         line_ys = calculate_quantile_prediction_vectors(coefs, line_xs)
 
-        x = data_df[x_colname]
+        scatter_n = 1000
+        x = data_df[x_colname][:scatter_n]
         assert isinstance(x, pd.Series)
-        y = data_df['y']
+        y = data_df['y'][:scatter_n]
         assert isinstance(y, pd.Series)
 
         output_filename = f'quantile_plot_{x_colname}.png'
@@ -181,6 +268,56 @@ def main():
         plot_regression(
             x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
             output_filepath=output_filepath)
+
+
+    ##################################################
+    # Ad hoc inspection of quantile regression results
+    ##################################################
+
+    intercepts = coefs[0, :]
+    regression_slope = coefs[1:, :].mean(axis=1)
+    perpendicular_slope = calculate_perpendicular_slope(regression_slope)
+
+    angle = calculate_angle_given_slope(perpendicular_slope)
+
+    scaled_data_train = np.c_[scaled_data.train_x, scaled_data.train_y]
+
+    # 'project_matrix_to_line' probably works for simple regression, but maybe 
+    #   not for higher dimensions
+    if scaled_data_train.shape[1] == 2: 
+        projection = project_matrix_to_line(scaled_data_train, [angle])
+
+        output_filename = 'quantile_regression_vs_histogram.png'
+        output_filepath = output_path / output_filename
+        plt.hist(projection, bins=100)
+        for i in intercepts:
+            plt.axvline(x=i, color='black', linestyle='dotted')
+        plt.savefig(output_filepath)
+        plt.clf()
+        plt.close()
+
+        output_filename = 'binned_quantiles.png'
+        output_filepath = output_path / output_filename
+        bins = np.digitize(projection, bins=intercepts)
+        plt.hist(bins)
+        plt.title('Ideally should be uniformly distributed')
+        plt.savefig(output_filepath)
+        plt.clf()
+        plt.close()
+
+
+        decile_summary = []
+        decile_summary.append('Deciles estimated by quantile regression')
+        decile_summary.append(str(np.round(intercepts, 2)))
+        decile_summary.append(
+            'Binned decile data points by quantile regression slope')
+        decile_summary.append(
+            str(np.round(np.quantile(projection, quantiles), 2)))
+
+        output_filename = 'decile_summary.txt'
+        output_filepath = output_path / output_filename
+        write_list_to_text_file(decile_summary, output_filepath, True)
+
 
 
 if __name__ == '__main__':
