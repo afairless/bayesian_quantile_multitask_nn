@@ -102,7 +102,9 @@ def main():
     # np.std(mvn_components.cases_data, axis=0)
     # mvn_components.linear_regression_coefficients
 
-    colnames = ['x1', 'x2', 'y']
+    colnames = [
+        'x' + str(i+1) for i in range(mvn_components.cases_data.shape[1])]
+    colnames[-1] = 'y'
     data_df = pd.DataFrame(
         np.concatenate(
             (scaled_data.train_x, 
@@ -110,8 +112,8 @@ def main():
             axis=1), 
         columns=colnames)
 
-    # TODO: FIX FORMULA GENERATION TO ACCOMMODATE FLEXIBLE # OF XS
-    model = smf.quantreg('y ~ x1 + x2', data=data_df)
+    formula = ['y ~ ' + ' + '.join(colnames[:-1])][0]
+    model = smf.quantreg(formula, data=data_df)
 
     quantiles = np.arange(0.1, 0.91, 0.1)
     model_results = fit_summarize_quantile_model(model, quantiles)
