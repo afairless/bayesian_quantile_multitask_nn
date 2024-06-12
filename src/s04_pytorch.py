@@ -273,39 +273,6 @@ def main():
 
 
 
-    ##################################################
-    # FIT QUANTILE REGRESSION MODELS
-    ##################################################
-
-    colnames = [
-        'x' + str(i+1) for i in range(mvn_components.cases_data.shape[1])]
-    colnames[-1] = 'y'
-    data_df = pd.DataFrame(
-        np.concatenate(
-            (scaled_data.train_x, 
-             scaled_data.train_y.reshape(-1, 1)), 
-            axis=1), 
-        columns=colnames)
-
-    formula = ['y ~ ' + ' + '.join(colnames[:-1])][0]
-    model = smf.quantreg(formula, data=data_df)
-
-    quantiles = np.arange(0.1, 0.91, 0.1)
-    model_results = fit_summarize_quantile_model(model, quantiles)
-
-
-    ##################################################
-    # SAVE RESULTS OF QUANTILE REGRESSION MODELS
-    ##################################################
-
-    # save model results summaries
-    ##################################################
-
-    output_filename = 'summaries.txt'
-    output_filepath = output_path / output_filename
-    write_list_to_text_file(model_results.summaries, output_filepath, True)
-
-
     # plot scatterplot and quantile regression lines over each predictor
     ##################################################
 

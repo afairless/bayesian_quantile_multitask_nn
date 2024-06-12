@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Callable
 
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -80,7 +81,7 @@ def calculate_quantile_prediction_vectors(
     return line_ys
 
 
-def plot_regression(
+def plot_scatter_and_regression(
     x: pd.Series, y: pd.Series, 
     line_xs: np.ndarray=np.array([]), line_ys: np.ndarray=np.array([]), 
     x_label: str='', y_label: str='', 
@@ -108,6 +109,28 @@ def plot_regression(
     plt.savefig(output_filepath)
     plt.clf()
     plt.close()
+
+
+def plot_scatter_regression_with_parameters(
+    df: pd.DataFrame, x_colname: str, line_xs_n: int, scatter_n: int, 
+    line_ys_func: Callable, output_path: Path, **kwargs):
+
+    x_min = df[x_colname].min()
+    x_max = df[x_colname].max()
+    line_xs = np.linspace(x_min, x_max, line_xs_n)
+    line_ys = line_ys_func(line_xs=line_xs, **kwargs)
+
+    x = df[x_colname][:scatter_n]
+    assert isinstance(x, pd.Series)
+    y = df['y'][:scatter_n]
+    assert isinstance(y, pd.Series)
+
+    output_filename = f'quantile_plot_{x_colname}.png'
+    output_filepath = output_path / output_filename
+
+    plot_scatter_and_regression(
+        x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
+        output_filepath=output_filepath)
 
 
 def calculate_perpendicular_slope(slope: float) -> float:
@@ -249,25 +272,16 @@ def main():
 
     x_colnames = [c for c in data_df.columns if c.startswith('x')]
 
+
     for x_colname in x_colnames:
-
-        x_min = data_df[x_colname].min()
-        x_max = data_df[x_colname].max()
-        line_xs = np.linspace(x_min, x_max, 100)
-        line_ys = calculate_quantile_prediction_vectors(coefs, line_xs)
-
-        scatter_n = 1000
-        x = data_df[x_colname][:scatter_n]
-        assert isinstance(x, pd.Series)
-        y = data_df['y'][:scatter_n]
-        assert isinstance(y, pd.Series)
 
         output_filename = f'quantile_plot_{x_colname}.png'
         output_filepath = output_path / output_filename
 
-        plot_regression(
-            x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
-            output_filepath=output_filepath)
+        plot_scatter_regression_with_parameters(
+            data_df, x_colname, line_xs_n=100, scatter_n=1000, 
+            line_ys_func=calculate_quantile_prediction_vectors, 
+            output_path=output_path, regression_coefficients=coefs)
 
 
     ##################################################
