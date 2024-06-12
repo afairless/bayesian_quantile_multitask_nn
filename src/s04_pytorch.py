@@ -235,6 +235,8 @@ def main():
     test_x = torch.from_numpy(scaled_data.test_x[:train_n]).float()
     test_y = torch.from_numpy(scaled_data.test_y[:train_n]).float()
 
+    valid_y = valid_y.reshape(-1, 1)
+
     n_epochs = 2
     batch_size = 32
     batch_n = train_x.shape[0] // batch_size
@@ -249,7 +251,7 @@ def main():
         # for i in range(batch_n):
         for i in range(10):
             batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
-            batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]]
+            batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
             y_pred = model(batch_x)
             loss = loss_fn(y_pred, batch_y)
             optimizer.zero_grad()
