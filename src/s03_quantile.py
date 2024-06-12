@@ -85,7 +85,7 @@ def plot_scatter_and_regression(
     x: pd.Series, y: pd.Series, 
     line_xs: np.ndarray=np.array([]), line_ys: np.ndarray=np.array([]), 
     x_label: str='', y_label: str='', 
-    title: str='', alpha: float=0.8, plot_axes: bool=True, 
+    title: str='', alpha: float=0.8, 
     output_filepath: Path=Path('plot.png')):
     """
     Plot scatterplot of response variable 'y' over one predictor variable 'x'
@@ -112,21 +112,33 @@ def plot_scatter_and_regression(
 
 
 def plot_scatter_regression_with_parameters(
-    df: pd.DataFrame, x_colname: str, line_xs_n: int, scatter_n: int, 
-    line_ys_func: Callable, output_path: Path, **kwargs):
+    df: pd.DataFrame, x_colname: str, y_colname: str, line_xs_n: int, 
+    scatter_n: int, scatter_n_seed: int, 
+    line_ys_func: Callable, output_filepath: Path, **kwargs):
+    """
+    Plot scatterplot of response variable 'y' over one predictor variable 'x'
+        and any number of regression lines 'line_ys' plotted over 'line_xs'
+
+    'df' - DataFrame containing data
+    'x_colname' - column name of predictor variable 'x'
+    'line_xs_n' - number of points along x-axis for which to plot regression 
+        line(s)
+    'scatter_n' - number of points to plot in scatterplot
+    'line_ys_func' - function to calculate y-values for regression line(s)
+    'output_filepath' - file path at which to save plot
+    """
 
     x_min = df[x_colname].min()
     x_max = df[x_colname].max()
     line_xs = np.linspace(x_min, x_max, line_xs_n)
     line_ys = line_ys_func(line_xs=line_xs, **kwargs)
 
-    x = df[x_colname][:scatter_n]
+    x = df[x_colname].sample(
+        n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
     assert isinstance(x, pd.Series)
-    y = df['y'][:scatter_n]
+    y = df[y_colname].sample(
+        n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
     assert isinstance(y, pd.Series)
-
-    output_filename = f'quantile_plot_{x_colname}.png'
-    output_filepath = output_path / output_filename
 
     plot_scatter_and_regression(
         x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
@@ -279,9 +291,10 @@ def main():
         output_filepath = output_path / output_filename
 
         plot_scatter_regression_with_parameters(
-            data_df, x_colname, line_xs_n=100, scatter_n=1000, 
+            data_df, x_colname, 'y', line_xs_n=100, 
+            scatter_n=1000, scatter_n_seed=29344,
             line_ys_func=calculate_quantile_prediction_vectors, 
-            output_path=output_path, regression_coefficients=coefs)
+            output_filepath=output_filepath, regression_coefficients=coefs)
 
 
     ##################################################
