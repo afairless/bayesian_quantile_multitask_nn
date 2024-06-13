@@ -2,9 +2,6 @@
 import pytest
 import numpy as np
 
-from hypothesis import given, settings
-import hypothesis.strategies as st
-
 from src.s03_quantile import (
     calculate_quantile_prediction_vectors,
     calculate_perpendicular_slope,
@@ -272,7 +269,5 @@ def test_project_matrix_to_line_07():
     correct_result = np.array([[-1], [1]])
 
     assert np.allclose(result, correct_result)
-
-
 
 

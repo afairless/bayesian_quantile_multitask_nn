@@ -1,13 +1,11 @@
 
-import pytest
 import numpy as np
-import statsmodels.api as sm
 from sklearn.linear_model import LinearRegression
 
 from hypothesis import given, settings
 import hypothesis.strategies as st
 
-from src.s01_generate_data import (
+from src.s01_generate_data.generate_data import (
     create_correlation_matrix,
     create_multivariate_normal_data,
     )

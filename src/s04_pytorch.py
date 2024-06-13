@@ -23,7 +23,51 @@ from src.utilities import (
     plot_scatter_regression_with_parameters)
 
 
+def calculate_quantile_loss(
+    quantile: float, true_values: torch.Tensor, 
+    predicted_values: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate quantile loss between a vector of true values and a vector of 
+        predicted values
+    """
+
+
+    # input parameter pre-checks
+    ##################################################
+
+    assert quantile > 0
+    assert quantile < 1
+
+    assert true_values.ndim == 1 or true_values.shape[1] == 1 
+    assert predicted_values.ndim == 1 or predicted_values.shape[1] == 1 
+    assert true_values.shape == predicted_values.shape
+
+
+    # calculate loss
+    ##################################################
+
+    errors = true_values - predicted_values
+
+    losses_1 = quantile * errors
+    losses_2 = (quantile - 1) * errors
+    losses = torch.max(losses_1, losses_2)
+
+    loss = torch.mean(losses)
+
+
+    # output post-checks
+    ##################################################
+
+    assert loss >= 0
+    assert loss <= 1
+
+    return loss
+
+
 def predict_line_ys(model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
+    """
+    Calculate quantile predictions for given x-values
+    """
 
     line_xs_tensor = torch.from_numpy(line_xs).float().reshape(-1, 1)
 
@@ -60,6 +104,7 @@ def main():
         nn.ReLU(),
         nn.Linear(6, 1))
 
+    # loss_fn = nn.MSELoss()
     loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -115,6 +160,23 @@ def main():
     #     test_y_pred = model(test_x[:predict_n])
     #     test_loss = loss_fn(test_y_pred, test_y[:predict_n].reshape(-1, 1))
 
+    type(valid_loss)
+    valid_loss.shape
+    type(loss)
+    loss.shape
+
+    q = 0.9
+    valid_y_pred.size()
+    valid_y_pred.shape
+    valid_y.shape
+    calculate_quantile_loss(q, valid_y_pred, valid_y)
+
+    for q in np.linspace(0.01, 0.99, 99):
+        errors = valid_y_pred - valid_y
+        losses_1 = (q - 1) * errors
+        losses_2 = q * errors
+        losses = torch.max(losses_1, losses_2)
+        loss = torch.mean(losses)
 
 
 
