@@ -9,15 +9,29 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from src.s01_generate_data.generate_data import (
-    create_data_with_parameters, 
-    split_data_with_parameters,
-    scale_data)
+if __name__ == '__main__':
 
-from src.common import (
-    print_loop_status_with_elapsed_time,
-    plot_scatter_regression_with_parameters,
-    calculate_quantile_loss)
+    from s01_generate_data.generate_data import (
+        create_data_with_parameters, 
+        split_data_with_parameters,
+        scale_data)
+
+    from common import (
+        print_loop_status_with_elapsed_time,
+        plot_scatter_regression_with_parameters,
+        calculate_quantile_loss)
+else:
+
+    from src.s01_generate_data.generate_data import (
+        create_data_with_parameters, 
+        split_data_with_parameters,
+        scale_data)
+
+    from src.common import (
+        print_loop_status_with_elapsed_time,
+        plot_scatter_regression_with_parameters,
+        calculate_quantile_loss)
+
 
 
 def predict_line_ys(model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
@@ -71,7 +85,7 @@ def main():
         nn.Linear(6, 1))
 
     # loss_fn = nn.MSELoss()
-    quantile = 0.1
+    quantile = 0.9
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
 
     epoch_n = 2
@@ -93,8 +107,8 @@ def main():
         print(f'Starting epoch {epoch}')
         model.train()
         start_time = time.time()
-        # for i in range(batch_n-1):
-        for i in range(60):
+        for i in range(batch_n-1):
+        # for i in range(60):
             print_loop_status_with_elapsed_time(i, 200, batch_n-1, start_time)
             batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
             batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
@@ -107,17 +121,16 @@ def main():
             loss.backward()
             optimizer.step()
 
-            model.eval()
-            valid_y_pred = model(valid_x)
-            line_ys = model(torch.Tensor(line_xs))
-            valid_y_preds.append(line_ys)
-            # valid_loss = loss_fn(valid_y_pred, valid_y)
-            valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
-            loss_log.append(valid_loss.item())
-            if valid_loss < best_metric:
-                best_metric = valid_loss
-                best_weights = copy.deepcopy(model.state_dict())
-                print('best_metric', best_metric)
+        model.eval()
+        valid_y_pred = model(valid_x)
+        line_ys = model(torch.Tensor(line_xs))
+        valid_y_preds.append(line_ys)
+        # valid_loss = loss_fn(valid_y_pred, valid_y)
+        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
+        loss_log.append(valid_loss.item())
+        if valid_loss < best_metric:
+            best_metric = valid_loss
+            best_weights = copy.deepcopy(model.state_dict())
 
 
 

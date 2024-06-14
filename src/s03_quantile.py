@@ -10,14 +10,26 @@ import statsmodels.formula.api as smf
 
 import matplotlib.pyplot as plt
 
-from src.s01_generate_data.generate_data import (
-    create_data_with_parameters, 
-    split_data_with_parameters,
-    scale_data)
+if __name__ == '__main__':
 
-from src.common import (
-    write_list_to_text_file,
-    plot_scatter_regression_with_parameters)
+    from s01_generate_data.generate_data import (
+        create_data_with_parameters, 
+        split_data_with_parameters,
+        scale_data)
+
+    from common import (
+        write_list_to_text_file,
+        plot_scatter_regression_with_parameters)
+else:
+
+    from src.s01_generate_data.generate_data import (
+        create_data_with_parameters, 
+        split_data_with_parameters,
+        scale_data)
+
+    from src.common import (
+        write_list_to_text_file,
+        plot_scatter_regression_with_parameters)
 
 
 @dataclass
