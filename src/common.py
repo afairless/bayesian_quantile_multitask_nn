@@ -1,5 +1,6 @@
 
 import time
+import torch
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -197,5 +198,45 @@ def plot_scatter_regression_with_parameters(
     plot_scatter_and_regression(
         x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
         output_filepath=output_filepath)
+
+
+##################################################
+# FUNCTIONS FOR CALCULATING LOSS
+##################################################
+
+
+def calculate_quantile_loss(
+    quantile: float, true_values: torch.Tensor, 
+    predicted_values: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate quantile loss between a vector of true values and a vector of 
+        predicted values
+    """
+
+
+    # input parameter pre-checks
+    ##################################################
+
+    assert quantile > 0
+    assert quantile < 1
+
+    assert true_values.ndim == 1 or true_values.shape[1] == 1 
+    assert predicted_values.ndim == 1 or predicted_values.shape[1] == 1 
+    assert true_values.shape == predicted_values.shape
+
+
+    # calculate loss
+    ##################################################
+
+    errors = true_values - predicted_values
+
+    losses_1 = quantile * errors
+    losses_2 = (quantile - 1) * errors
+    losses = torch.max(losses_1, losses_2)
+
+    loss = torch.mean(losses)
+
+    return loss
+
 
 

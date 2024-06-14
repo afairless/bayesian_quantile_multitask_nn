@@ -20,41 +20,8 @@ from src.s01_generate_data.generate_data import (
 from src.common import (
     write_list_to_text_file,
     print_loop_status_with_elapsed_time,
-    plot_scatter_regression_with_parameters)
-
-
-def calculate_quantile_loss(
-    quantile: float, true_values: torch.Tensor, 
-    predicted_values: torch.Tensor) -> torch.Tensor:
-    """
-    Calculate quantile loss between a vector of true values and a vector of 
-        predicted values
-    """
-
-
-    # input parameter pre-checks
-    ##################################################
-
-    assert quantile > 0
-    assert quantile < 1
-
-    assert true_values.ndim == 1 or true_values.shape[1] == 1 
-    assert predicted_values.ndim == 1 or predicted_values.shape[1] == 1 
-    assert true_values.shape == predicted_values.shape
-
-
-    # calculate loss
-    ##################################################
-
-    errors = true_values - predicted_values
-
-    losses_1 = quantile * errors
-    losses_2 = (quantile - 1) * errors
-    losses = torch.max(losses_1, losses_2)
-
-    loss = torch.mean(losses)
-
-    return loss
+    plot_scatter_regression_with_parameters,
+    calculate_quantile_loss)
 
 
 def predict_line_ys(model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
