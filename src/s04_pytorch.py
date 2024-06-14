@@ -12,12 +12,12 @@ import torch.nn as nn
 
 import matplotlib.pyplot as plt
 
-from s01_generate_data.generate_data import (
+from src.s01_generate_data.generate_data import (
     create_data_with_parameters, 
     split_data_with_parameters,
     scale_data)
 
-from utilities import (
+from src.common import (
     write_list_to_text_file,
     print_loop_status_with_elapsed_time,
     plot_scatter_regression_with_parameters)

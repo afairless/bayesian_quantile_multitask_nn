@@ -15,7 +15,7 @@ from src.s01_generate_data.generate_data import (
     split_data_with_parameters,
     scale_data)
 
-from src.utilities import (
+from src.common import (
     write_list_to_text_file,
     plot_scatter_regression_with_parameters)
 
