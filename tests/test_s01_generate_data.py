@@ -49,7 +49,7 @@ def test_multivariate_normal_components_linear_regression_coefficients_01(
         reliable re-running of tests
     """
 
-    cases_n = 400_000
+    cases_n = 500_000
     mvnc = create_multivariate_normal_data(cases_n, variables_n, seed)
 
     x = mvnc.cases_data[:, mvnc.predictors_column_idxs]

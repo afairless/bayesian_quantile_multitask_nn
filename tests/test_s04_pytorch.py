@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-from src.s04_pytorch import (
+from src.common import (
     calculate_quantile_loss,
     )
 
@@ -176,7 +176,7 @@ def test_calculate_quantile_loss_12():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.12])
+    correct_result = torch.Tensor([0.08])
 
     assert torch.allclose(result, correct_result)
 
@@ -192,7 +192,7 @@ def test_calculate_quantile_loss_13():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.04])
+    correct_result = torch.Tensor([0.16])
 
     assert torch.allclose(result, correct_result)
 
@@ -240,7 +240,7 @@ def test_calculate_quantile_loss_16():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.04])
+    correct_result = torch.Tensor([0.01])
 
     assert torch.allclose(result, correct_result)
 
@@ -256,7 +256,7 @@ def test_calculate_quantile_loss_17():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.12])
+    correct_result = torch.Tensor([0.18])
 
     assert torch.allclose(result, correct_result)
 
@@ -272,7 +272,7 @@ def test_calculate_quantile_loss_18():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.18])
+    correct_result = torch.Tensor([0.22])
 
     assert torch.allclose(result, correct_result)
 
@@ -304,7 +304,7 @@ def test_calculate_quantile_loss_20():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.18])
+    correct_result = torch.Tensor([0.22])
 
     assert torch.allclose(result, correct_result)
 
@@ -320,56 +320,12 @@ def test_calculate_quantile_loss_21():
 
     result = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([0.72])
+    correct_result = torch.Tensor([0.48])
 
     assert torch.allclose(result, correct_result)
 
 
 def test_calculate_quantile_loss_22():
-    """
-    Test valid input
-
-    Example from:
-        https://towardsdatascience.com/quantile-loss-and-quantile-regression-b0689c13f54d?gi=7b79e95d7c10
-        Quantile Loss & Quantile Regression
-        Vyacheslav Efimov
-        Jan 28, 2023
-    """
-
-    quantile = 0.8
-    true_values = torch.Tensor([40])
-    predicted_values = torch.Tensor([30])
-
-    result = calculate_quantile_loss(quantile, true_values, predicted_values)
-
-    correct_result = torch.Tensor([8])
-
-    assert torch.allclose(result, correct_result)
-
-
-def test_calculate_quantile_loss_23():
-    """
-    Test valid input
-
-    Example from:
-        https://towardsdatascience.com/quantile-loss-and-quantile-regression-b0689c13f54d?gi=7b79e95d7c10
-        Quantile Loss & Quantile Regression
-        Vyacheslav Efimov
-        Jan 28, 2023
-    """
-
-    quantile = 0.8
-    true_values = torch.Tensor([40])
-    predicted_values = torch.Tensor([50])
-
-    result = calculate_quantile_loss(quantile, true_values, predicted_values)
-
-    correct_result = torch.Tensor([2])
-
-    assert torch.allclose(result, correct_result)
-
-
-def test_calculate_quantile_loss_24():
     """
     Test valid input
     """
@@ -385,7 +341,7 @@ def test_calculate_quantile_loss_24():
     assert torch.allclose(result, correct_result)
 
 
-def test_calculate_quantile_loss_25():
+def test_calculate_quantile_loss_23():
     """
     Test penalization ratio with valid input
     """
@@ -398,12 +354,12 @@ def test_calculate_quantile_loss_25():
     predicted_values = torch.Tensor([4])
     result_2 = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([4])
+    correct_result = torch.Tensor([0.25])
 
     assert torch.allclose(result_2 / result_1, correct_result)
 
 
-def test_calculate_quantile_loss_26():
+def test_calculate_quantile_loss_24():
     """
     Test penalization ratio with valid input
     """
@@ -416,8 +372,100 @@ def test_calculate_quantile_loss_26():
     predicted_values = torch.Tensor([4])
     result_2 = calculate_quantile_loss(quantile, true_values, predicted_values)
 
-    correct_result = torch.Tensor([3/7])
+    correct_result = torch.Tensor([7/3])
 
     assert torch.allclose(result_2 / result_1, correct_result)
+
+
+def test_pytorch_train_with_quantile_loss_01():
+    """
+    Test quantile regression with PyTorch
+    """
+
+    train_x = torch.Tensor([
+        [-1], [-1], [-1], [-1], [-1], [-1],
+         [0],  [0],  [0],  [0],  [0],  [0],
+         [1],  [1],  [1],  [1],  [1],  [1]])
+
+    train_y = torch.Tensor([0, 1, 2, 3, 4, 5]).reshape(-1, 1)
+
+    model = torch.nn.Sequential(
+        torch.nn.Linear(1, 8),
+        torch.nn.ReLU(),
+        torch.nn.Linear(8, 4),
+        torch.nn.ReLU(),
+        torch.nn.Linear(4, 1))
+
+    quantile = 0.2
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.002, maximize=False)
+
+    epoch_n = 1000
+
+    for _ in range(epoch_n):
+        model.train()
+        for i in range(3):
+            batch_x = train_x[(6*i):(6*i+6)]
+            batch_y = train_y
+
+            y_pred = model(batch_x)
+
+            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+    model.eval()
+    final_y_pred = model(train_x[0, :])
+
+    correct_result = torch.Tensor([1])
+
+    assert torch.allclose(final_y_pred, correct_result, atol=2e-2)
+
+
+def test_pytorch_train_with_quantile_loss_02():
+    """
+    Test quantile regression with PyTorch
+    """
+
+    train_x = torch.Tensor([
+        [-1], [-1], [-1], [-1], [-1], [-1],
+         [0],  [0],  [0],  [0],  [0],  [0],
+         [1],  [1],  [1],  [1],  [1],  [1]])
+
+    train_y = torch.Tensor([0, 1, 2, 3, 4, 5]).reshape(-1, 1)
+
+    model = torch.nn.Sequential(
+        torch.nn.Linear(1, 8),
+        torch.nn.ReLU(),
+        torch.nn.Linear(8, 4),
+        torch.nn.ReLU(),
+        torch.nn.Linear(4, 1))
+
+    quantile = 0.8
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
+
+    epoch_n = 2000
+
+    for _ in range(epoch_n):
+        model.train()
+        for i in range(3):
+            batch_x = train_x[(6*i):(6*i+6)]
+            batch_y = train_y
+
+            y_pred = model(batch_x)
+
+            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+    model.eval()
+    final_y_pred = model(train_x[0, :])
+
+    correct_result = torch.Tensor([4])
+
+    assert torch.allclose(final_y_pred, correct_result, atol=2e-2)
 
 

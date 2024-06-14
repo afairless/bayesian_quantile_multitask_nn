@@ -228,7 +228,7 @@ def calculate_quantile_loss(
     # calculate loss
     ##################################################
 
-    errors = true_values - predicted_values
+    errors = predicted_values - true_values 
 
     losses_1 = quantile * errors
     losses_2 = (quantile - 1) * errors

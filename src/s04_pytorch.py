@@ -5,12 +5,9 @@ import copy
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
-
-import matplotlib.pyplot as plt
 
 from src.s01_generate_data.generate_data import (
     create_data_with_parameters, 
@@ -18,7 +15,6 @@ from src.s01_generate_data.generate_data import (
     scale_data)
 
 from src.common import (
-    write_list_to_text_file,
     print_loop_status_with_elapsed_time,
     plot_scatter_regression_with_parameters,
     calculate_quantile_loss)
@@ -57,17 +53,6 @@ def main():
     ##################################################
 
 
-    model = nn.Sequential(
-        nn.Linear(1, 12),
-        nn.ReLU(),
-        nn.Linear(12, 6),
-        nn.ReLU(),
-        nn.Linear(6, 1))
-
-    # loss_fn = nn.MSELoss()
-    quantile = 0.1
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
     train_n = scaled_data.train_x.shape[0]
     train_x = torch.from_numpy(scaled_data.train_x[:train_n]).float()
     train_y = torch.from_numpy(scaled_data.train_y[:train_n]).float()
@@ -78,7 +63,18 @@ def main():
 
     valid_y = valid_y.reshape(-1, 1)
 
-    n_epochs = 2
+    model = nn.Sequential(
+        nn.Linear(1, 12),
+        nn.ReLU(),
+        nn.Linear(12, 6),
+        nn.ReLU(),
+        nn.Linear(6, 1))
+
+    # loss_fn = nn.MSELoss()
+    quantile = 0.1
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
+
+    epoch_n = 2
     batch_size = 4
     batch_n = train_x.shape[0] // batch_size
     batch_idxs = torch.arange(0, len(train_x), batch_size)
@@ -87,17 +83,18 @@ def main():
     best_weights = None
     loss_log = []
 
-    # valid_y_preds = []
-    # x_min = valid_x.min()
-    # x_max = valid_x.max()
-    # line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
+    valid_y_preds = []
+    x_min = valid_x.min()
+    x_max = valid_x.max()
+    line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
+    line_xs = np.array([-1, 0, 1]).reshape(-1, 1)
 
-    for epoch in range(n_epochs):
+    for epoch in range(epoch_n):
         print(f'Starting epoch {epoch}')
         model.train()
         start_time = time.time()
-        for i in range(batch_n-1):
-        # for i in range(10):
+        # for i in range(batch_n-1):
+        for i in range(60):
             print_loop_status_with_elapsed_time(i, 200, batch_n-1, start_time)
             batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
             batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
@@ -110,17 +107,17 @@ def main():
             loss.backward()
             optimizer.step()
 
-        model.eval()
-        valid_y_pred = model(valid_x)
-        # line_ys = model(torch.Tensor(line_xs))
-        # valid_y_preds.append(line_ys)
-        # valid_loss = loss_fn(valid_y_pred, valid_y)
-        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
-        loss_log.append(valid_loss.item())
-        if valid_loss < best_metric:
-            best_metric = valid_loss
-            best_weights = copy.deepcopy(model.state_dict())
-            print('best_metric', best_metric)
+            model.eval()
+            valid_y_pred = model(valid_x)
+            line_ys = model(torch.Tensor(line_xs))
+            valid_y_preds.append(line_ys)
+            # valid_loss = loss_fn(valid_y_pred, valid_y)
+            valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
+            loss_log.append(valid_loss.item())
+            if valid_loss < best_metric:
+                best_metric = valid_loss
+                best_weights = copy.deepcopy(model.state_dict())
+                print('best_metric', best_metric)
 
 
 
@@ -129,7 +126,9 @@ def main():
     model.load_state_dict(best_weights)
 
 
-    
+    for e in valid_y_preds:
+        print(e.tolist())
+
     # plt.scatter(valid_x[:100], valid_y[:100], alpha=0.2)
     # for e in valid_y_preds:
     #     plt.plot(line_xs, e.detach().numpy(), color='black', linestyle='dotted', zorder=9)
