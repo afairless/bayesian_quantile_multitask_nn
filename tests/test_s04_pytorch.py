@@ -309,3 +309,115 @@ def test_calculate_quantile_loss_20():
     assert torch.allclose(result, correct_result)
 
 
+def test_calculate_quantile_loss_21():
+    """
+    Test valid input
+    """
+
+    quantile = 0.8
+    true_values = torch.Tensor([10, 12, 15, 18, 20])
+    predicted_values = torch.Tensor([11, 13, 14, 16, 19])
+
+    result = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([0.72])
+
+    assert torch.allclose(result, correct_result)
+
+
+def test_calculate_quantile_loss_22():
+    """
+    Test valid input
+
+    Example from:
+        https://towardsdatascience.com/quantile-loss-and-quantile-regression-b0689c13f54d?gi=7b79e95d7c10
+        Quantile Loss & Quantile Regression
+        Vyacheslav Efimov
+        Jan 28, 2023
+    """
+
+    quantile = 0.8
+    true_values = torch.Tensor([40])
+    predicted_values = torch.Tensor([30])
+
+    result = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([8])
+
+    assert torch.allclose(result, correct_result)
+
+
+def test_calculate_quantile_loss_23():
+    """
+    Test valid input
+
+    Example from:
+        https://towardsdatascience.com/quantile-loss-and-quantile-regression-b0689c13f54d?gi=7b79e95d7c10
+        Quantile Loss & Quantile Regression
+        Vyacheslav Efimov
+        Jan 28, 2023
+    """
+
+    quantile = 0.8
+    true_values = torch.Tensor([40])
+    predicted_values = torch.Tensor([50])
+
+    result = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([2])
+
+    assert torch.allclose(result, correct_result)
+
+
+def test_calculate_quantile_loss_24():
+    """
+    Test valid input
+    """
+
+    quantile = 0.5
+    true_values = torch.Tensor([1, 2])
+    predicted_values = torch.Tensor([2, 1])
+
+    result = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([0.5])
+
+    assert torch.allclose(result, correct_result)
+
+
+def test_calculate_quantile_loss_25():
+    """
+    Test penalization ratio with valid input
+    """
+
+    quantile = 0.8
+    true_values = torch.Tensor([5])
+    predicted_values = torch.Tensor([6])
+    result_1 = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    predicted_values = torch.Tensor([4])
+    result_2 = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([4])
+
+    assert torch.allclose(result_2 / result_1, correct_result)
+
+
+def test_calculate_quantile_loss_26():
+    """
+    Test penalization ratio with valid input
+    """
+
+    quantile = 0.3
+    true_values = torch.Tensor([5])
+    predicted_values = torch.Tensor([6])
+    result_1 = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    predicted_values = torch.Tensor([4])
+    result_2 = calculate_quantile_loss(quantile, true_values, predicted_values)
+
+    correct_result = torch.Tensor([3/7])
+
+    assert torch.allclose(result_2 / result_1, correct_result)
+
+

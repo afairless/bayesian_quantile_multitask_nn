@@ -12,12 +12,12 @@ import torch.nn as nn
 
 import matplotlib.pyplot as plt
 
-from src.s01_generate_data.generate_data import (
+from s01_generate_data.generate_data import (
     create_data_with_parameters, 
     split_data_with_parameters,
     scale_data)
 
-from src.utilities import (
+from utilities import (
     write_list_to_text_file,
     print_loop_status_with_elapsed_time,
     plot_scatter_regression_with_parameters)
@@ -53,13 +53,6 @@ def calculate_quantile_loss(
     losses = torch.max(losses_1, losses_2)
 
     loss = torch.mean(losses)
-
-
-    # output post-checks
-    ##################################################
-
-    assert loss >= 0
-    assert loss <= 1
 
     return loss
 
@@ -105,7 +98,7 @@ def main():
         nn.Linear(6, 1))
 
     # loss_fn = nn.MSELoss()
-    loss_fn = nn.MSELoss()
+    quantile = 0.1
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     train_n = scaled_data.train_x.shape[0]
@@ -119,13 +112,18 @@ def main():
     valid_y = valid_y.reshape(-1, 1)
 
     n_epochs = 2
-    batch_size = 32
+    batch_size = 4
     batch_n = train_x.shape[0] // batch_size
     batch_idxs = torch.arange(0, len(train_x), batch_size)
 
     best_metric = np.inf
     best_weights = None
     loss_log = []
+
+    # valid_y_preds = []
+    # x_min = valid_x.min()
+    # x_max = valid_x.max()
+    # line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
 
     for epoch in range(n_epochs):
         print(f'Starting epoch {epoch}')
@@ -137,13 +135,20 @@ def main():
             batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
             batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
             y_pred = model(batch_x)
-            loss = loss_fn(y_pred, batch_y)
+            # loss = loss_fn(y_pred, batch_y)
+            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
+            # if i < 40:
+            #     print(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
         model.eval()
         valid_y_pred = model(valid_x)
-        valid_loss = loss_fn(valid_y_pred, valid_y)
+        # line_ys = model(torch.Tensor(line_xs))
+        # valid_y_preds.append(line_ys)
+        # valid_loss = loss_fn(valid_y_pred, valid_y)
+        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
         loss_log.append(valid_loss.item())
         if valid_loss < best_metric:
             best_metric = valid_loss
@@ -152,32 +157,18 @@ def main():
 
 
 
+
     assert isinstance(best_weights, dict)
     model.load_state_dict(best_weights)
 
-    # predict_n = 4
-    # with torch.no_grad():
-    #     test_y_pred = model(test_x[:predict_n])
-    #     test_loss = loss_fn(test_y_pred, test_y[:predict_n].reshape(-1, 1))
 
-    type(valid_loss)
-    valid_loss.shape
-    type(loss)
-    loss.shape
-
-    q = 0.9
-    valid_y_pred.size()
-    valid_y_pred.shape
-    valid_y.shape
-    calculate_quantile_loss(q, valid_y_pred, valid_y)
-
-    for q in np.linspace(0.01, 0.99, 99):
-        errors = valid_y_pred - valid_y
-        losses_1 = (q - 1) * errors
-        losses_2 = q * errors
-        losses = torch.max(losses_1, losses_2)
-        loss = torch.mean(losses)
-
+    
+    # plt.scatter(valid_x[:100], valid_y[:100], alpha=0.2)
+    # for e in valid_y_preds:
+    #     plt.plot(line_xs, e.detach().numpy(), color='black', linestyle='dotted', zorder=9)
+    # plt.savefig(output_path / 'iterplot.png')
+    # plt.clf()
+    # plt.close()
 
 
 
