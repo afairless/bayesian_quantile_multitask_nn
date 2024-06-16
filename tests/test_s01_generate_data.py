@@ -67,13 +67,3 @@ def test_multivariate_normal_components_linear_regression_coefficients_01(
     #     mvnc.linear_regression_coefficients, atol=1e-1)
 
 
-# def test_dummy_function02_01():
-#     """
-#     Test input of wrong data type
-#     """
-
-#     input = -1
-
-#     with pytest.raises(AssertionError):
-#         result = dummy_function02(input)
-

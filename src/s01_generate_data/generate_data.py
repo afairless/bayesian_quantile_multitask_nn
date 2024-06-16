@@ -135,7 +135,8 @@ def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
 
 def create_multivariate_normal_data(
     cases_n: int, variables_n: int, seed: int, zero_centered: bool=True,
-    noise_factor: int=1) -> MultivariateNormalComponents:
+    unit_variance: bool=True, noise_factor: int=1
+    ) -> MultivariateNormalComponents:
     """
     Generate multivariate normal data with given numbers of cases and 
         variables, centered at the origin
@@ -151,7 +152,11 @@ def create_multivariate_normal_data(
     else:
         mvn_means = np.random.randint(-100, 100, variables_n)
 
-    mvn_stds = np.random.randint(1, 100, variables_n)
+    if unit_variance:
+        mvn_stds = np.ones(variables_n)
+    else:
+        mvn_stds = np.random.randint(1, 100, variables_n)
+
     mvn_correlation = create_correlation_matrix(variables_n, seed+1)
     mvn_covariance = np.outer(mvn_stds, mvn_stds) * mvn_correlation
 
@@ -187,7 +192,7 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
 
     seed = 50319
     mvnc = create_multivariate_normal_data(
-        cases_n, variables_n, seed, False, noise_factor)
+        cases_n, variables_n, seed, True, True, noise_factor)
 
     return mvnc
 

@@ -63,6 +63,13 @@ def main():
 
 
     ##################################################
+    dir(scaled_data)
+    dir(mvn_components)
+    mvn_components.linear_regression_coefficients
+    mvn_components.covariance
+
+
+    ##################################################
     # 
     ##################################################
 
@@ -138,16 +145,6 @@ def main():
     assert isinstance(best_weights, dict)
     model.load_state_dict(best_weights)
 
-
-    for e in valid_y_preds:
-        print(e.tolist())
-
-    # plt.scatter(valid_x[:100], valid_y[:100], alpha=0.2)
-    # for e in valid_y_preds:
-    #     plt.plot(line_xs, e.detach().numpy(), color='black', linestyle='dotted', zorder=9)
-    # plt.savefig(output_path / 'iterplot.png')
-    # plt.clf()
-    # plt.close()
 
 
 
