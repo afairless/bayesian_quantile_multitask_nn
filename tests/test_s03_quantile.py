@@ -7,6 +7,7 @@ from src.s03_quantile import (
     calculate_perpendicular_slope,
     calculate_angle_given_slope,
     project_matrix_to_line,
+    bin_y_values_by_x_bins,
     )
 
 
@@ -269,5 +270,88 @@ def test_project_matrix_to_line_07():
     correct_result = np.array([[-1], [1]])
 
     assert np.allclose(result, correct_result)
+
+
+def test_bin_y_values_by_x_bins_01():
+    """
+    Test horizontal/unchanging 'y' bins where 'y' bin bounds cover all 'y' data
+    """
+
+    x = np.arange(-100, 100, 10)
+    y_unit = np.array([-1, 1])
+    y = np.repeat(y_unit, repeats=len(x)//len(y_unit))
+    assert len(x) == len(y)
+    x_bin_n = 4
+
+    def calculate_ys(line_xs):
+        return np.array([
+            np.array([-2] * len(line_xs)),
+            np.array([0] * len(line_xs)),
+            np.array([2] * len(line_xs))]).T
+
+    result = bin_y_values_by_x_bins(
+        x, y, x_bin_n, line_ys_func=calculate_ys)
+
+    correct_result = np.array([0, 10, 10])
+
+    assert np.allclose(result, correct_result)
+
+
+def test_bin_y_values_by_x_bins_02():
+    """
+    Test horizontal/unchanging 'y' bins where 'y' bin bounds do not cover all 
+        'y' data
+    """
+
+    x = np.arange(-100, 100, 10)
+    y_unit = np.array([-1, 1, 3, 4, 5])
+    y = np.repeat(y_unit, repeats=len(x)//len(y_unit))
+    assert len(x) == len(y)
+    x_bin_n = 6
+
+    def calculate_ys(line_xs):
+        return np.array([
+            np.array([0] * len(line_xs)),
+            np.array([3] * len(line_xs)),
+            np.array([4.5] * len(line_xs))]).T
+
+    result = bin_y_values_by_x_bins(
+        x, y, x_bin_n, line_ys_func=calculate_ys)
+
+    correct_result = np.array([4, 4, 8, 4])
+
+    assert np.allclose(result, correct_result)
+
+
+def test_bin_y_values_by_x_bins_03():
+    """
+    Test 'y' bins that change with 'x' where 'y' bin bounds do not cover all 
+        'y' data
+    """
+
+    x = np.arange(-100, 100, 10)
+    y_unit = np.array([-1, 1])
+    y = np.repeat(y_unit, repeats=len(x)//len(y_unit))
+    assert len(x) == len(y)
+    x_bin_n = 4
+
+    def calculate_ys(line_xs):
+        return np.array([
+            np.array([-2, 0, 6, -2]),
+            np.array([ 0, 2, 8,  0]),
+            np.array([ 2, 4, 9,  2])]).T
+
+    result = bin_y_values_by_x_bins(
+        x, y, x_bin_n, line_ys_func=calculate_ys)
+
+    correct_result = np.array([9, 10, 1])
+
+    assert np.allclose(result, correct_result)
+
+
+
+
+
+
 
 

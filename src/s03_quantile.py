@@ -184,16 +184,29 @@ def project_matrix_to_line(
 def bin_y_values_by_x_bins(
     x: np.ndarray, y: np.ndarray, x_bin_n: int, line_ys_func: Callable, **kwargs
     ) -> np.ndarray:
+    """
+    From x-y pairs, bin 'x' values into 'x_bin_n' number of bins; then for each
+        'x' bin, bin 'y' values into bins with cut points produces by 
+        'line_ys_func'
+    """
+
+    assert x.shape == y.shape
+    assert x.ndim == y.ndim == 1
 
     line_xs = np.linspace(x.min(), x.max(), x_bin_n)
     x_bin_idxs = np.digitize(x, bins=line_xs)
     x_bin_idxs_y = np.column_stack((x_bin_idxs, y))
     # np.unique(x_bin_idxs_y[:, 0], return_counts=True)
 
+    # is there an elegant way to vectorize this loop?
     x_binned_y_bin_idxs_compiled = np.array([], dtype=int)
     for i in range(x_bin_n):
-        x_binned_ys = x_bin_idxs_y[x_bin_idxs_y[:, 0] == i][:, 1]
+
+        x_binned_ys = x_bin_idxs_y[x_bin_idxs_y[:, 0] == (i+1)][:, 1]
+
         line_ys = line_ys_func(line_xs=line_xs, **kwargs)
+        assert line_xs.shape[0] == line_ys.shape[0] == x_bin_n
+
         x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=line_ys[i, :])
         x_binned_y_bin_idxs_compiled = np.concatenate(
             (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
@@ -333,6 +346,8 @@ def main():
         regression_coefficients=coefs)
 
 
+    # aa = calculate_quantile_prediction_vectors(np.array([1, 1]), np.arange(10))
+    # aa.shape
 
 
 
