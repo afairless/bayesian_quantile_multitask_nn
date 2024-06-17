@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from typing import Callable
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -180,6 +181,28 @@ def project_matrix_to_line(
     return projection
 
 
+def bin_y_values_by_x_bins(
+    x: np.ndarray, y: np.ndarray, x_bin_n: int, line_ys_func: Callable, **kwargs
+    ) -> np.ndarray:
+
+    line_xs = np.linspace(x.min(), x.max(), x_bin_n)
+    x_bin_idxs = np.digitize(x, bins=line_xs)
+    x_bin_idxs_y = np.column_stack((x_bin_idxs, y))
+    # np.unique(x_bin_idxs_y[:, 0], return_counts=True)
+
+    x_binned_y_bin_idxs_compiled = np.array([], dtype=int)
+    for i in range(x_bin_n):
+        x_binned_ys = x_bin_idxs_y[x_bin_idxs_y[:, 0] == i][:, 1]
+        line_ys = line_ys_func(line_xs=line_xs, **kwargs)
+        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=line_ys[i, :])
+        x_binned_y_bin_idxs_compiled = np.concatenate(
+            (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
+
+    y_bin_counts = np.bincount(x_binned_y_bin_idxs_compiled)
+
+    return y_bin_counts 
+
+
 def main():
 
     output_path = Path.cwd() / 'output' / 's03_quantile'
@@ -293,6 +316,25 @@ def main():
         output_filename = 'decile_summary.txt'
         output_filepath = output_path / output_filename
         write_list_to_text_file(decile_summary, output_filepath, True)
+
+
+    ##################################################
+    # 
+    ##################################################
+
+    x_colname = 'x1'
+    y_colname = 'y'
+    x = data_df[x_colname].values
+    assert isinstance(x, np.ndarray)
+    y = data_df[y_colname].values
+    assert isinstance(y, np.ndarray)
+    y_bin_counts = bin_y_values_by_x_bins(
+        x, y, 1000, line_ys_func=calculate_quantile_prediction_vectors, 
+        regression_coefficients=coefs)
+
+
+
+
 
 
 if __name__ == '__main__':
