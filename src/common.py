@@ -194,12 +194,39 @@ def extract_data_df_columns(
     return x, y
 
 
+def enforce_bin_monotonicity(bin_cuts: np.ndarray) -> np.ndarray:
+    """
+    Bin cuts/borders theoretically cannot cross, so enforce monotonicity in case
+        they do
+    """
+
+    bin_cuts = bin_cuts.copy()
+
+    small_difference = 0.0001
+    monotonically_increasing = bin_cuts[1:] >= bin_cuts[:-1]
+    monotonically_decreasing = bin_cuts[1:] <= bin_cuts[:-1]
+    mostly_increasing = monotonically_increasing.sum() > (len(bin_cuts) / 2)
+    mostly_decreasing = monotonically_decreasing.sum() > (len(bin_cuts) / 2)
+
+    if mostly_increasing and not np.all(monotonically_increasing):
+        idx = np.where(~monotonically_increasing)[0]
+        for i in idx:
+            bin_cuts[i] = bin_cuts[i-1] + small_difference
+
+    if mostly_decreasing and not np.all(monotonically_decreasing):
+        idx = np.where(~monotonically_decreasing)[0]
+        for i in idx[::-1]:
+            bin_cuts[i] = bin_cuts[i+1] - small_difference
+
+    return bin_cuts
+
+
 def bin_y_values_by_x_bins(
     x: np.ndarray, y: np.ndarray, x_bin_n: int, line_ys_func: Callable, **kwargs
     ) -> np.ndarray:
     """
     From x-y pairs, bin 'x' values into 'x_bin_n' number of bins; then for each
-        'x' bin, bin 'y' values into bins with cut points produces by 
+        'x' bin, bin 'y' values into bins with cut points produced by 
         'line_ys_func'
     """
 
@@ -220,7 +247,9 @@ def bin_y_values_by_x_bins(
         line_ys = line_ys_func(line_xs=line_xs, **kwargs)
         assert line_xs.shape[0] == line_ys.shape[0] == x_bin_n
 
-        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=line_ys[i, :])
+        # 'np.digitize' requires monotonicity
+        bin_cuts = enforce_bin_monotonicity(line_ys[i, :])
+        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=bin_cuts)
         x_binned_y_bin_idxs_compiled = np.concatenate(
             (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
 

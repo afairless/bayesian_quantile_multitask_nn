@@ -40,10 +40,10 @@ else:
         evaluate_bin_uniformity)
 
 
-
-def predict_line_ys(model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
+def predict_line_ys_per_model(
+    model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
     """
-    Calculate quantile predictions for given x-values
+    Calculate quantile predictions for given x-values for a model
     """
 
     line_xs_tensor = torch.from_numpy(line_xs).float().reshape(-1, 1)
@@ -54,6 +54,88 @@ def predict_line_ys(model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
     line_ys = line_ys_tensor.numpy() 
 
     return line_ys  
+
+
+def predict_line_ys(models: list[nn.Module], line_xs: np.ndarray) -> np.ndarray:
+    """
+    Calculate quantile predictions for given x-values for multiple models
+    """
+
+    line_ys_list = []
+    for model in models:
+        line_ys_one_model = predict_line_ys_per_model(model, line_xs)
+        line_ys_list.append(line_ys_one_model)
+
+    line_ys = np.concatenate(line_ys_list, axis=1)
+
+    return line_ys  
+
+
+def train_model(
+    quantile: float,
+    train_x: torch.Tensor, train_y: torch.Tensor,
+    valid_x: torch.Tensor, valid_y: torch.Tensor) -> nn.Module:
+    """
+    Train a quantile regression model
+    """
+
+    model = nn.Sequential(
+        nn.Linear(1, 12),
+        nn.ReLU(),
+        nn.Linear(12, 6),
+        nn.ReLU(),
+        nn.Linear(6, 1))
+
+    # loss_fn = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
+
+    epoch_n = 2
+    batch_size = 64
+    batch_n = train_x.shape[0] // batch_size
+    batch_idxs = torch.arange(0, len(train_x), batch_size)
+
+    best_metric = np.inf
+    best_weights = None
+    loss_log = []
+
+    valid_y_preds = []
+    x_min = valid_x.min()
+    x_max = valid_x.max()
+    line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
+    # line_xs = np.array([-1, 0, 1]).reshape(-1, 1)
+
+    for epoch in range(epoch_n):
+        print(f'Starting epoch {epoch}')
+        model.train()
+        start_time = time.time()
+        for i in range(batch_n-1):
+            print_loop_status_with_elapsed_time(
+                i, batch_n//20, batch_n-1, start_time)
+            batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
+            batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
+            y_pred = model(batch_x)
+            # loss = loss_fn(y_pred, batch_y)
+            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        valid_y_pred = model(valid_x)
+        line_ys = model(torch.Tensor(line_xs))
+        valid_y_preds.append(line_ys)
+        # valid_loss = loss_fn(valid_y_pred, valid_y)
+        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
+        loss_log.append(valid_loss.item())
+        if valid_loss < best_metric:
+            best_metric = valid_loss
+            best_weights = copy.deepcopy(model.state_dict())
+
+
+    assert isinstance(best_weights, dict)
+    model.load_state_dict(best_weights)
+
+    return model
 
 
 def main():
@@ -67,13 +149,6 @@ def main():
         data.train, data.valid, data.test, 
         mvn_components.predictors_column_idxs, 
         mvn_components.response_column_idx)
-
-
-    ##################################################
-    dir(scaled_data)
-    dir(mvn_components)
-    mvn_components.linear_regression_coefficients
-    mvn_components.covariance
 
 
     ##################################################
@@ -91,67 +166,12 @@ def main():
 
     valid_y = valid_y.reshape(-1, 1)
 
-    model = nn.Sequential(
-        nn.Linear(1, 12),
-        nn.ReLU(),
-        nn.Linear(12, 6),
-        nn.ReLU(),
-        nn.Linear(6, 1))
+    quantiles = np.arange(0.1, 0.91, 0.1)
 
-    # loss_fn = nn.MSELoss()
-    quantile = 0.9
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
-
-    epoch_n = 2
-    batch_size = 4
-    batch_n = train_x.shape[0] // batch_size
-    batch_idxs = torch.arange(0, len(train_x), batch_size)
-
-    best_metric = np.inf
-    best_weights = None
-    loss_log = []
-
-    valid_y_preds = []
-    x_min = valid_x.min()
-    x_max = valid_x.max()
-    line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
-    line_xs = np.array([-1, 0, 1]).reshape(-1, 1)
-
-    for epoch in range(epoch_n):
-        print(f'Starting epoch {epoch}')
-        model.train()
-        start_time = time.time()
-        for i in range(batch_n-1):
-        # for i in range(60):
-            print_loop_status_with_elapsed_time(i, 200, batch_n-1, start_time)
-            batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
-            batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
-            y_pred = model(batch_x)
-            # loss = loss_fn(y_pred, batch_y)
-            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
-            # if i < 40:
-            #     print(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-        model.eval()
-        valid_y_pred = model(valid_x)
-        line_ys = model(torch.Tensor(line_xs))
-        valid_y_preds.append(line_ys)
-        # valid_loss = loss_fn(valid_y_pred, valid_y)
-        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
-        loss_log.append(valid_loss.item())
-        if valid_loss < best_metric:
-            best_metric = valid_loss
-            best_weights = copy.deepcopy(model.state_dict())
-
-
-
-
-    assert isinstance(best_weights, dict)
-    model.load_state_dict(best_weights)
-
+    models = []
+    for quantile in quantiles:
+        model = train_model(quantile, train_x, train_y, valid_x, valid_y)
+        models.append(model)
 
 
 
@@ -174,7 +194,7 @@ def main():
         data_df, x_colname, 'y', line_xs_n=100, 
         scatter_n=1000, scatter_n_seed=29344,
         line_ys_func=predict_line_ys, 
-        output_filepath=output_filepath, model=model)
+        output_filepath=output_filepath, models=models)
 
 
 
@@ -184,7 +204,7 @@ def main():
 
     x, y = extract_data_df_columns(data_df)
     y_bin_counts = bin_y_values_by_x_bins(
-        x, y, 1000, line_ys_func=predict_line_ys, model=model)
+        x, y, 1000, line_ys_func=predict_line_ys, models=models)
 
 
     output_filename = 'binned_quantiles_by_x_bins.png'
@@ -194,8 +214,6 @@ def main():
     plt.clf()
     plt.close()
 
-
-    # TODO: add quantiles to the regression
     output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename
     evaluate_bin_uniformity(y_bin_counts, output_filepath)
