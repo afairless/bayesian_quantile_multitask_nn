@@ -194,29 +194,42 @@ def extract_data_df_columns(
     return x, y
 
 
-def enforce_bin_monotonicity(bin_cuts: np.ndarray) -> np.ndarray:
+def enforce_bin_monotonicity(
+    bin_cuts: np.ndarray, small_difference: float=1e-6) -> np.ndarray:
     """
     Bin cuts/borders theoretically cannot cross, so enforce monotonicity in case
         they do
+
+    'small_difference' - a small amount by which to shift changed values to 
+        ensure that float imprecision in evaluating "equal" values does not
+        violate monotonicity
     """
 
-    bin_cuts = bin_cuts.copy()
+    assert bin_cuts.ndim == 1
 
-    small_difference = 0.0001
+    # must have at least 4 numbers, i.e., 3 differences between numbers to have
+    #   both a trend and a difference against that trend
+    if len(bin_cuts) < 4:
+        return bin_cuts
+
+    bin_cuts = bin_cuts.copy()
+    if np.issubdtype(bin_cuts.dtype, np.integer):
+        bin_cuts = bin_cuts.astype(float)
+
     monotonically_increasing = bin_cuts[1:] >= bin_cuts[:-1]
     monotonically_decreasing = bin_cuts[1:] <= bin_cuts[:-1]
     mostly_increasing = monotonically_increasing.sum() > (len(bin_cuts) / 2)
     mostly_decreasing = monotonically_decreasing.sum() > (len(bin_cuts) / 2)
 
     if mostly_increasing and not np.all(monotonically_increasing):
-        idx = np.where(~monotonically_increasing)[0]
+        idx = np.where(~monotonically_increasing)[0] + 1
         for i in idx:
             bin_cuts[i] = bin_cuts[i-1] + small_difference
 
     if mostly_decreasing and not np.all(monotonically_decreasing):
-        idx = np.where(~monotonically_decreasing)[0]
-        for i in idx[::-1]:
-            bin_cuts[i] = bin_cuts[i+1] - small_difference
+        idx = np.where(~monotonically_decreasing)[0] + 1
+        for i in idx:
+            bin_cuts[i] = bin_cuts[i-1] - small_difference
 
     return bin_cuts
 

@@ -28,7 +28,7 @@ def test_pytorch_train_with_quantile_loss_01():
     quantile = 0.2
     optimizer = torch.optim.Adam(model.parameters(), lr=0.002, maximize=False)
 
-    epoch_n = 2000
+    epoch_n = 2500
 
     for _ in range(epoch_n):
         model.train()
@@ -74,7 +74,7 @@ def test_pytorch_train_with_quantile_loss_02():
     quantile = 0.8
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
 
-    epoch_n = 2000
+    epoch_n = 2500
 
     for _ in range(epoch_n):
         model.train()
