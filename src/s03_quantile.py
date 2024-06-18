@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
-from typing import Callable
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -21,7 +20,9 @@ if __name__ == '__main__':
 
     from common import (
         write_list_to_text_file,
-        plot_scatter_regression_with_parameters)
+        plot_scatter_regression_with_parameters,
+        extract_data_df_columns,
+        bin_y_values_by_x_bins)
 else:
 
     from src.s01_generate_data.generate_data import (
@@ -31,7 +32,9 @@ else:
 
     from src.common import (
         write_list_to_text_file,
-        plot_scatter_regression_with_parameters)
+        plot_scatter_regression_with_parameters,
+        extract_data_df_columns,
+        bin_y_values_by_x_bins)
 
 
 @dataclass
@@ -180,58 +183,6 @@ def project_matrix_to_line(
     projection = a_matrix @ projection_matrix
 
     return projection
-
-
-def bin_y_values_by_x_bins(
-    x: np.ndarray, y: np.ndarray, x_bin_n: int, line_ys_func: Callable, **kwargs
-    ) -> np.ndarray:
-    """
-    From x-y pairs, bin 'x' values into 'x_bin_n' number of bins; then for each
-        'x' bin, bin 'y' values into bins with cut points produces by 
-        'line_ys_func'
-    """
-
-    assert x.shape == y.shape
-    assert x.ndim == y.ndim == 1
-
-    line_xs = np.linspace(x.min(), x.max(), x_bin_n)
-    x_bin_idxs = np.digitize(x, bins=line_xs)
-    x_bin_idxs_y = np.column_stack((x_bin_idxs, y))
-    # np.unique(x_bin_idxs_y[:, 0], return_counts=True)
-
-    # is there an elegant way to vectorize this loop?
-    x_binned_y_bin_idxs_compiled = np.array([], dtype=int)
-    for i in range(x_bin_n):
-
-        x_binned_ys = x_bin_idxs_y[x_bin_idxs_y[:, 0] == (i+1)][:, 1]
-
-        line_ys = line_ys_func(line_xs=line_xs, **kwargs)
-        assert line_xs.shape[0] == line_ys.shape[0] == x_bin_n
-
-        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=line_ys[i, :])
-        x_binned_y_bin_idxs_compiled = np.concatenate(
-            (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
-
-    y_bin_counts = np.bincount(x_binned_y_bin_idxs_compiled)
-
-    return y_bin_counts 
-
-
-def extract_data_df_columns(
-    data_df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Establish data types for extracted Pandas DataFrame columns so linter
-        doesn't complain
-    """
-
-    x_colname = 'x1'
-    y_colname = 'y'
-    x = data_df[x_colname].values
-    assert isinstance(x, np.ndarray)
-    y = data_df[y_colname].values
-    assert isinstance(y, np.ndarray)
-
-    return x, y
 
 
 def main():

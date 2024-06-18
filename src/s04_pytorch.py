@@ -5,6 +5,8 @@ import copy
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import scipy.stats as stats
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -17,9 +19,12 @@ if __name__ == '__main__':
         scale_data)
 
     from common import (
+        write_list_to_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
-        calculate_quantile_loss)
+        calculate_quantile_loss,
+        extract_data_df_columns,
+        bin_y_values_by_x_bins)
 else:
 
     from src.s01_generate_data.generate_data import (
@@ -28,9 +33,12 @@ else:
         scale_data)
 
     from src.common import (
+        write_list_to_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
-        calculate_quantile_loss)
+        calculate_quantile_loss,
+        extract_data_df_columns,
+        bin_y_values_by_x_bins)
 
 
 
@@ -175,38 +183,37 @@ def main():
     # 
     ##################################################
 
-    """
-    output_filename = 'quantile_regression_vs_histogram.png'
-    output_filepath = output_path / output_filename
-    plt.hist(projection, bins=100)
-    for i in intercepts:
-        plt.axvline(x=i, color='black', linestyle='dotted')
-    plt.savefig(output_filepath)
-    plt.clf()
-    plt.close()
+    x, y = extract_data_df_columns(data_df)
+    y_bin_counts = bin_y_values_by_x_bins(
+        x, y, 1000, line_ys_func=predict_line_ys, model=model)
 
-    output_filename = 'binned_quantiles.png'
+
+    output_filename = 'binned_quantiles_by_x_bins.png'
     output_filepath = output_path / output_filename
-    bins = np.digitize(projection, bins=intercepts)
-    plt.hist(bins)
-    plt.title('Ideally should be uniformly distributed')
+    plt.bar(range(len(y_bin_counts)), y_bin_counts)
     plt.savefig(output_filepath)
     plt.clf()
     plt.close()
 
 
-    decile_summary = []
-    decile_summary.append('Deciles estimated by quantile regression')
-    decile_summary.append(str(np.round(intercepts, 2)))
-    decile_summary.append(
-        'Binned decile data points by quantile regression slope')
-    decile_summary.append(
-        str(np.round(np.quantile(projection, quantiles), 2)))
+    uniformity_summary = []
+    uniformity_summary.append('Number of data points in each binned quantile')
+    uniformity_summary.append(str(np.round(y_bin_counts, 2)))
+    uniformity_summary.append('\n')
 
-    output_filename = 'decile_summary.txt'
+    uniformity_summary.append('Chi-square results for deviation from uniformity')
+    uniform_arr = np.repeat(y_bin_counts.mean(), len(y_bin_counts))
+    results = stats.chisquare(f_obs=y_bin_counts, f_exp=uniform_arr)
+    uniformity_summary.append(str(results))
+    uniformity_summary.append('\n')
+
+    uniformity_summary.append('Lowest bin count divided by highest bin count')
+    max_difference = y_bin_counts.min() / y_bin_counts.max()
+    uniformity_summary.append(str(max_difference))
+
+    output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename
-    write_list_to_text_file(decile_summary, output_filepath, True)
-    """
+    write_list_to_text_file(uniformity_summary, output_filepath, True)
 
 
 
