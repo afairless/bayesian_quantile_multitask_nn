@@ -5,7 +5,6 @@ import copy
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 import torch
@@ -19,12 +18,12 @@ if __name__ == '__main__':
         scale_data)
 
     from common import (
-        write_list_to_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
         calculate_quantile_loss,
         extract_data_df_columns,
-        bin_y_values_by_x_bins)
+        bin_y_values_by_x_bins,
+        evaluate_bin_uniformity)
 else:
 
     from src.s01_generate_data.generate_data import (
@@ -33,12 +32,12 @@ else:
         scale_data)
 
     from src.common import (
-        write_list_to_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
         calculate_quantile_loss,
         extract_data_df_columns,
-        bin_y_values_by_x_bins)
+        bin_y_values_by_x_bins,
+        evaluate_bin_uniformity)
 
 
 
@@ -196,24 +195,10 @@ def main():
     plt.close()
 
 
-    uniformity_summary = []
-    uniformity_summary.append('Number of data points in each binned quantile')
-    uniformity_summary.append(str(np.round(y_bin_counts, 2)))
-    uniformity_summary.append('\n')
-
-    uniformity_summary.append('Chi-square results for deviation from uniformity')
-    uniform_arr = np.repeat(y_bin_counts.mean(), len(y_bin_counts))
-    results = stats.chisquare(f_obs=y_bin_counts, f_exp=uniform_arr)
-    uniformity_summary.append(str(results))
-    uniformity_summary.append('\n')
-
-    uniformity_summary.append('Lowest bin count divided by highest bin count')
-    max_difference = y_bin_counts.min() / y_bin_counts.max()
-    uniformity_summary.append(str(max_difference))
-
+    # TODO: add quantiles to the regression
     output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename
-    write_list_to_text_file(uniformity_summary, output_filepath, True)
+    evaluate_bin_uniformity(y_bin_counts, output_filepath)
 
 
 
