@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 from typing import Callable
 from pathlib import Path
 from dataclasses import dataclass
@@ -216,6 +217,23 @@ def bin_y_values_by_x_bins(
     return y_bin_counts 
 
 
+def extract_data_df_columns(
+    data_df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Establish data types for extracted Pandas DataFrame columns so linter
+        doesn't complain
+    """
+
+    x_colname = 'x1'
+    y_colname = 'y'
+    x = data_df[x_colname].values
+    assert isinstance(x, np.ndarray)
+    y = data_df[y_colname].values
+    assert isinstance(y, np.ndarray)
+
+    return x, y
+
+
 def main():
 
     output_path = Path.cwd() / 'output' / 's03_quantile'
@@ -335,20 +353,22 @@ def main():
     # 
     ##################################################
 
-    x_colname = 'x1'
-    y_colname = 'y'
-    x = data_df[x_colname].values
-    assert isinstance(x, np.ndarray)
-    y = data_df[y_colname].values
-    assert isinstance(y, np.ndarray)
+    x, y = extract_data_df_columns(data_df)
     y_bin_counts = bin_y_values_by_x_bins(
         x, y, 1000, line_ys_func=calculate_quantile_prediction_vectors, 
         regression_coefficients=coefs)
 
 
-    # aa = calculate_quantile_prediction_vectors(np.array([1, 1]), np.arange(10))
-    # aa.shape
+    plt.bar(range(len(y_bin_counts)), y_bin_counts)
+    plt.show()
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
 
+
+    uniform_arr = np.repeat(y_bin_counts.mean(), len(y_bin_counts))
+    stats.chisquare(f_obs=y_bin_counts, f_exp=uniform_arr)
+    max_difference = y_bin_counts.min() / y_bin_counts.max()
 
 
 
