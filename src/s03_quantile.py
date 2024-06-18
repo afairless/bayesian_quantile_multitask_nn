@@ -326,7 +326,7 @@ def main():
         plt.clf()
         plt.close()
 
-        output_filename = 'binned_quantiles.png'
+        output_filename = 'binned_quantiles_by_projection.png'
         output_filepath = output_path / output_filename
         bins = np.digitize(projection, bins=intercepts)
         plt.hist(bins)
@@ -339,6 +339,8 @@ def main():
         decile_summary = []
         decile_summary.append('Deciles estimated by quantile regression')
         decile_summary.append(str(np.round(intercepts, 2)))
+        decile_summary.append('\n')
+
         decile_summary.append(
             'Binned decile data points by quantile regression slope')
         decile_summary.append(
@@ -349,27 +351,42 @@ def main():
         write_list_to_text_file(decile_summary, output_filepath, True)
 
 
-    ##################################################
-    # 
-    ##################################################
+        ##################################################
+        # 
+        ##################################################
 
-    x, y = extract_data_df_columns(data_df)
-    y_bin_counts = bin_y_values_by_x_bins(
-        x, y, 1000, line_ys_func=calculate_quantile_prediction_vectors, 
-        regression_coefficients=coefs)
-
-
-    plt.bar(range(len(y_bin_counts)), y_bin_counts)
-    plt.show()
-    plt.savefig(output_filepath)
-    plt.clf()
-    plt.close()
+        x, y = extract_data_df_columns(data_df)
+        y_bin_counts = bin_y_values_by_x_bins(
+            x, y, 1000, line_ys_func=calculate_quantile_prediction_vectors, 
+            regression_coefficients=coefs)
 
 
-    uniform_arr = np.repeat(y_bin_counts.mean(), len(y_bin_counts))
-    stats.chisquare(f_obs=y_bin_counts, f_exp=uniform_arr)
-    max_difference = y_bin_counts.min() / y_bin_counts.max()
+        output_filename = 'binned_quantiles_by_x_bins.png'
+        output_filepath = output_path / output_filename
+        plt.bar(range(len(y_bin_counts)), y_bin_counts)
+        plt.savefig(output_filepath)
+        plt.clf()
+        plt.close()
 
+
+        uniformity_summary = []
+        uniformity_summary.append('Number of data points in each binned quantile')
+        uniformity_summary.append(str(np.round(y_bin_counts, 2)))
+        uniformity_summary.append('\n')
+
+        uniformity_summary.append('Chi-square results for deviation from uniformity')
+        uniform_arr = np.repeat(y_bin_counts.mean(), len(y_bin_counts))
+        results = stats.chisquare(f_obs=y_bin_counts, f_exp=uniform_arr)
+        uniformity_summary.append(str(results))
+        uniformity_summary.append('\n')
+
+        uniformity_summary.append('Lowest bin count divided by highest bin count')
+        max_difference = y_bin_counts.min() / y_bin_counts.max()
+        uniformity_summary.append(str(max_difference))
+
+        output_filename = 'uniformity_summary.txt'
+        output_filepath = output_path / output_filename
+        write_list_to_text_file(uniformity_summary, output_filepath, True)
 
 
 if __name__ == '__main__':
