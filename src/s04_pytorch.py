@@ -9,6 +9,9 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.utils.data as torch_utils
+from torch.utils.tensorboard.writer import SummaryWriter
+
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 if __name__ == '__main__':
@@ -63,13 +66,32 @@ def extract_data_from_dataloader_batches(
     return x, y
 
 
+def log_loss_to_tensorboard(
+    loss: torch.Tensor, loss_name: str, writer: SummaryWriter, 
+    epoch: int, loader: torch_utils.DataLoader, batch_idx: int):
+    """
+    Log a loss value to TensorBoard and print it to the console
+    """
+
+    print(
+        f'Epoch {epoch}, '
+        f'Batch {batch_idx+1}/{len(loader)}: '
+        f'{loss_name}={loss.item()}')
+    global_step_n = epoch * len(loader) + batch_idx
+    writer.add_scalar(loss_name, loss.item(), global_step_n)
+
+
 def train_model(
     quantile: float,
-    train_loader: torch_utils.DataLoader, 
-    valid_loader: torch_utils.DataLoader) -> nn.Module:
+    train_x_y: torch_utils.TensorDataset, 
+    valid_x_y: torch_utils.TensorDataset,
+    output_path: Path) -> nn.Module:
     """
     Train a quantile regression model
     """
+
+    tensorboard_path = output_path / 'runs'
+    writer = SummaryWriter(tensorboard_path)
 
     model = nn.Sequential(
         nn.Linear(1, 12),
@@ -84,16 +106,21 @@ def train_model(
 
     best_loss = np.inf
     best_state = None
-    loss_log = []
 
     start_time = time.time()
     for epoch in range(epoch_n):
 
+        i = 0
         print(f'Epoch {epoch+1}/{epoch_n}')
         print_loop_status_with_elapsed_time(epoch, 1, epoch_n, start_time)
 
+        train_loader = torch_utils.DataLoader(
+            train_x_y , shuffle=True, batch_size=64, num_workers=1)
+        valid_loader = torch_utils.DataLoader(
+            valid_x_y , shuffle=False, batch_size=64, num_workers=1)
+
         model.train()
-        for batch_x, batch_y in train_loader:
+        for i, (batch_x, batch_y) in enumerate(train_loader):
 
             y_predict = model(batch_x).reshape(-1)
             loss = calculate_quantile_loss(quantile, y_predict, batch_y)
@@ -102,16 +129,28 @@ def train_model(
             loss.backward()
             optimizer.step()
 
+            if i % 1000 == 0:
+                log_loss_to_tensorboard(
+                    loss, 'train_loss', writer, epoch, train_loader, i)
+
         model.eval()
 
         valid_x, valid_y = extract_data_from_dataloader_batches(valid_loader)
         valid_y_predict = model(valid_x).reshape(-1)
 
         valid_loss = calculate_quantile_loss(quantile, valid_y_predict, valid_y)
-        loss_log.append(valid_loss.item())
+
+        log_loss_to_tensorboard(
+            valid_loss, 'valid_loss', writer, epoch, valid_loader, i)
+
         if valid_loss < best_loss:
             best_loss = valid_loss
             best_state = copy.deepcopy(model.state_dict())
+
+        # delete loaders so that resources are properly released
+        del train_loader
+        del valid_loader
+
 
 
     assert isinstance(best_state, dict)
@@ -179,17 +218,13 @@ def main():
 
     train_x_y = torch_utils.TensorDataset(train_x, train_y)
     valid_x_y = torch_utils.TensorDataset(valid_x, valid_y)
-    train_loader = torch_utils.DataLoader(train_x_y , shuffle=False, batch_size=64)
-    valid_loader = torch_utils.DataLoader(valid_x_y , shuffle=False, batch_size=64)
-
-    valid_y = valid_y.reshape(-1, 1)
 
     quantiles = np.arange(0.1, 0.91, 0.1)
 
     models = []
     for quantile in quantiles:
-        print(f'Quantile: {round(quantile, 2)}')
-        model = train_model(quantile, train_loader, valid_loader)
+        print(f'\nQuantile: {round(quantile, 2)}')
+        model = train_model(quantile, train_x_y, valid_x_y, output_path)
         models.append(model)
 
 
