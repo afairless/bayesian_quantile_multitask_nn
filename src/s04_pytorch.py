@@ -8,6 +8,8 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+import torch.utils.data as torch_utils
+
 
 if __name__ == '__main__':
 
@@ -41,6 +43,83 @@ else:
         evaluate_bin_uniformity)
 
 
+def extract_data_from_dataloader_batches(
+    dataloader: torch_utils.DataLoader) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Extract all predictor and response variable data from a DataLoader by 
+        iterating through it
+    """
+
+    x_list = []
+    y_list = []
+
+    for batch_x, batch_y in dataloader:
+        x_list.append(batch_x)
+        y_list.append(batch_y)
+
+    x = torch.concatenate(x_list, axis=0)
+    y = torch.concatenate(y_list, axis=0)
+
+    return x, y
+
+
+def train_model(
+    quantile: float,
+    train_loader: torch_utils.DataLoader, 
+    valid_loader: torch_utils.DataLoader) -> nn.Module:
+    """
+    Train a quantile regression model
+    """
+
+    model = nn.Sequential(
+        nn.Linear(1, 12),
+        nn.ReLU(),
+        nn.Linear(12, 6),
+        nn.ReLU(),
+        nn.Linear(6, 1))
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
+
+    epoch_n = 2
+
+    best_loss = np.inf
+    best_state = None
+    loss_log = []
+
+    start_time = time.time()
+    for epoch in range(epoch_n):
+
+        print(f'Epoch {epoch+1}/{epoch_n}')
+        print_loop_status_with_elapsed_time(epoch, 1, epoch_n, start_time)
+
+        model.train()
+        for batch_x, batch_y in train_loader:
+
+            y_predict = model(batch_x).reshape(-1)
+            loss = calculate_quantile_loss(quantile, y_predict, batch_y)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+
+        valid_x, valid_y = extract_data_from_dataloader_batches(valid_loader)
+        valid_y_predict = model(valid_x).reshape(-1)
+
+        valid_loss = calculate_quantile_loss(quantile, valid_y_predict, valid_y)
+        loss_log.append(valid_loss.item())
+        if valid_loss < best_loss:
+            best_loss = valid_loss
+            best_state = copy.deepcopy(model.state_dict())
+
+
+    assert isinstance(best_state, dict)
+    model.load_state_dict(best_state)
+
+    return model
+
+
 def predict_line_ys_per_model(
     model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
     """
@@ -72,73 +151,6 @@ def predict_line_ys(models: list[nn.Module], line_xs: np.ndarray) -> np.ndarray:
     return line_ys  
 
 
-def train_model(
-    quantile: float,
-    train_x: torch.Tensor, train_y: torch.Tensor,
-    valid_x: torch.Tensor, valid_y: torch.Tensor) -> nn.Module:
-    """
-    Train a quantile regression model
-    """
-
-    model = nn.Sequential(
-        nn.Linear(1, 12),
-        nn.ReLU(),
-        nn.Linear(12, 6),
-        nn.ReLU(),
-        nn.Linear(6, 1))
-
-    # loss_fn = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
-
-    epoch_n = 2
-    batch_size = 64
-    batch_n = train_x.shape[0] // batch_size
-    batch_idxs = torch.arange(0, len(train_x), batch_size)
-
-    best_metric = np.inf
-    best_weights = None
-    loss_log = []
-
-    valid_y_preds = []
-    x_min = valid_x.min()
-    x_max = valid_x.max()
-    line_xs = np.linspace(x_min, x_max , 100).reshape(-1, 1)
-    # line_xs = np.array([-1, 0, 1]).reshape(-1, 1)
-
-    for epoch in range(epoch_n):
-        print(f'Starting epoch {epoch}')
-        model.train()
-        start_time = time.time()
-        for i in range(batch_n-1):
-            print_loop_status_with_elapsed_time(
-                i, batch_n//20, batch_n-1, start_time)
-            batch_x = train_x[batch_idxs[i]:batch_idxs[i+1]]
-            batch_y = train_y[batch_idxs[i]:batch_idxs[i+1]].reshape(-1, 1)
-            y_pred = model(batch_x)
-            # loss = loss_fn(y_pred, batch_y)
-            loss = calculate_quantile_loss(quantile, y_pred, batch_y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-        model.eval()
-        valid_y_pred = model(valid_x)
-        line_ys = model(torch.Tensor(line_xs))
-        valid_y_preds.append(line_ys)
-        # valid_loss = loss_fn(valid_y_pred, valid_y)
-        valid_loss = calculate_quantile_loss(quantile, valid_y_pred, valid_y)
-        loss_log.append(valid_loss.item())
-        if valid_loss < best_metric:
-            best_metric = valid_loss
-            best_weights = copy.deepcopy(model.state_dict())
-
-
-    assert isinstance(best_weights, dict)
-    model.load_state_dict(best_weights)
-
-    return model
-
-
 def main():
 
     output_path = Path.cwd() / 'output' / 's04_pytorch'
@@ -165,13 +177,19 @@ def main():
     test_x = torch.from_numpy(scaled_data.test_x[:train_n]).float()
     test_y = torch.from_numpy(scaled_data.test_y[:train_n]).float()
 
+    train_x_y = torch_utils.TensorDataset(train_x, train_y)
+    valid_x_y = torch_utils.TensorDataset(valid_x, valid_y)
+    train_loader = torch_utils.DataLoader(train_x_y , shuffle=False, batch_size=64)
+    valid_loader = torch_utils.DataLoader(valid_x_y , shuffle=False, batch_size=64)
+
     valid_y = valid_y.reshape(-1, 1)
 
     quantiles = np.arange(0.1, 0.91, 0.1)
 
     models = []
     for quantile in quantiles:
-        model = train_model(quantile, train_x, train_y, valid_x, valid_y)
+        print(f'Quantile: {round(quantile, 2)}')
+        model = train_model(quantile, train_loader, valid_loader)
         models.append(model)
 
 
