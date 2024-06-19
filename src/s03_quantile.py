@@ -22,6 +22,7 @@ if __name__ == '__main__':
         plot_scatter_regression_with_parameters,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
+        plot_distribution_by_bin,
         evaluate_bin_uniformity)
 else:
 
@@ -35,6 +36,7 @@ else:
         plot_scatter_regression_with_parameters,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
+        plot_distribution_by_bin,
         evaluate_bin_uniformity)
 
 
@@ -312,14 +314,9 @@ def main():
             x, y, 1000, line_ys_func=calculate_quantile_prediction_vectors, 
             regression_coefficients=coefs)
 
-
         output_filename = 'binned_quantiles_by_x_bins.png'
         output_filepath = output_path / output_filename
-        plt.bar(range(len(y_bin_counts)), y_bin_counts)
-        plt.savefig(output_filepath)
-        plt.clf()
-        plt.close()
-
+        plot_distribution_by_bin(y_bin_counts, output_filepath)
 
         output_filename = 'uniformity_summary.txt'
         output_filepath = output_path / output_filename

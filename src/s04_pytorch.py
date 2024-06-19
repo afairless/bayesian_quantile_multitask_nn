@@ -5,7 +5,6 @@ import copy
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -23,6 +22,7 @@ if __name__ == '__main__':
         calculate_quantile_loss,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
+        plot_distribution_by_bin,
         evaluate_bin_uniformity)
 else:
 
@@ -37,6 +37,7 @@ else:
         calculate_quantile_loss,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
+        plot_distribution_by_bin,
         evaluate_bin_uniformity)
 
 
@@ -206,13 +207,9 @@ def main():
     y_bin_counts = bin_y_values_by_x_bins(
         x, y, 1000, line_ys_func=predict_line_ys, models=models)
 
-
     output_filename = 'binned_quantiles_by_x_bins.png'
     output_filepath = output_path / output_filename
-    plt.bar(range(len(y_bin_counts)), y_bin_counts)
-    plt.savefig(output_filepath)
-    plt.clf()
-    plt.close()
+    plot_distribution_by_bin(y_bin_counts, output_filepath)
 
     output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename

@@ -92,6 +92,7 @@ def write_list_to_text_file(
 # FUNCTIONS FOR LOOP ITERATION COUNTING
 ##################################################
 
+
 def seconds_to_formatted_time_string(seconds: float) -> str:
     """
     Given the number of seconds, returns a formatted string showing the time
@@ -334,9 +335,34 @@ def plot_scatter_regression_with_parameters(
         n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
     assert isinstance(y, pd.Series)
 
+    x_label = x_colname
+    y_label = y_colname
+    title = 'Regression quantiles and scatterplot of data sample'
     plot_scatter_and_regression(
-        x, y, line_xs=line_xs, line_ys=line_ys, alpha=0.05, 
+        x, y, 
+        line_xs=line_xs, line_ys=line_ys, 
+        x_label=x_label, y_label=y_label, 
+        title=title, alpha=0.05, 
         output_filepath=output_filepath)
+
+
+def plot_distribution_by_bin(y_bin_counts: np.ndarray, output_filepath: Path):
+    """
+    Plot distribution of data points across quantile bins
+    """
+
+    y_label = 'Number of data points'
+    x_label = 'Quantile bin index'
+    title = 'Number of data points per quantile bin'
+
+    plt.bar(range(len(y_bin_counts)), y_bin_counts)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
 
 
 def evaluate_bin_uniformity(y_bin_counts: np.ndarray, output_filepath: Path):
