@@ -263,7 +263,10 @@ def bin_y_values_by_x_bins(
 
         # 'np.digitize' requires monotonicity
         bin_cuts = enforce_bin_monotonicity(line_ys[i, :])
-        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=bin_cuts)
+        try:
+            x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=bin_cuts)
+        except:
+            breakpoint()
         x_binned_y_bin_idxs_compiled = np.concatenate(
             (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
 
@@ -328,6 +331,14 @@ def plot_scatter_regression_with_parameters(
     line_xs = np.linspace(x_min, x_max, line_xs_n)
     line_ys = line_ys_func(line_xs=line_xs, **kwargs)
 
+    # save regression 'x' and 'y' values
+    output_path = output_filepath.parent
+    array_output_filepath = output_path / 'line_xs.npy'
+    np.savetxt(array_output_filepath, line_xs, delimiter=',')
+    array_output_filepath = output_path / 'line_ys.npy'
+    np.savetxt(array_output_filepath, line_ys, delimiter=',')
+
+    # sample data points, so that not all have to be plotted 
     x = df[x_colname].sample(
         n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
     assert isinstance(x, pd.Series)
