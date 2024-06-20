@@ -479,6 +479,79 @@ def save_plots(
     plt.close()
 
 
+def plot_scatter_and_regression(
+    x: pd.Series, y: pd.Series, 
+    line_xs: np.ndarray=np.array([]), line_ys: np.ndarray=np.array([]), 
+    x_label: str='', y_label: str='', 
+    title: str='', alpha: float=0.8, 
+    output_filepath: Path=Path('plot.png')):
+    """
+    Plot scatterplot of response variable 'y' over one predictor variable 'x'
+        and any number of regression lines 'line_ys' plotted over 'line_xs'
+    Copied from 'common' module because this module is run in a different
+        virtual environment
+    """
+
+    plt.scatter(x, y, alpha=alpha, zorder=2)
+
+    if line_xs.size > 0 and line_ys.size > 0:
+        assert len(line_xs) == line_ys.shape[0]
+        for i in range(line_ys.shape[1]):
+            plt.plot(line_xs, line_ys[:, i], color='black', linestyle='dotted', zorder=9)
+
+    plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
+    plt.axvline(x=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
+
+
+def plot_scatter_regression_with_parameters(
+    x: np.ndarray, y: np.ndarray, 
+    x_colname: str, y_colname: str, 
+    line_xs: np.ndarray, line_ys: np.ndarray,
+    scatter_n: int, scatter_n_seed: int, 
+    output_filepath: Path):
+    """
+    Plot scatterplot of response variable 'y' over one predictor variable 'x'
+        and any number of regression lines 'line_ys' plotted over 'line_xs'
+
+    'df' - DataFrame containing data
+    'x_colname' - column name of predictor variable 'x'
+    'line_xs_n' - number of points along x-axis for which to plot regression 
+        line(s)
+    'scatter_n' - number of points to plot in scatterplot
+    'line_ys_func' - function to calculate y-values for regression line(s)
+    'output_filepath' - file path at which to save plot
+
+    Adapted from 'common' module because this module is run in a different
+        virtual environment
+    """
+
+    # sample data points, so that not all have to be plotted 
+    # use Pandas to match similar function 
+    x_sample = pd.Series(x[:, 0]).sample(
+        n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
+    assert isinstance(x_sample, pd.Series)
+    y_sample = pd.Series(y).sample(
+        n=scatter_n, random_state=scatter_n_seed).reset_index(drop=True)
+    assert isinstance(y_sample, pd.Series)
+
+    x_label = x_colname
+    y_label = y_colname
+    title = 'Regression quantiles and scatterplot of data sample'
+    plot_scatter_and_regression(
+        x_sample, y_sample, 
+        line_xs=line_xs, line_ys=line_ys, 
+        x_label=x_label, y_label=y_label, 
+        title=title, alpha=0.05, 
+        output_filepath=output_filepath)
+
 
 def main():
 
@@ -540,6 +613,24 @@ def main():
 
     save_summaries(fit_df, fit_model, output_path)
     save_plots(x_sample, y_sample, fit_df, fit_model, output_path)
+
+    line_ys = np.repeat(
+        np.array([-0.3, 0, 0.6]).reshape(-1, 1), 
+        len(line_xs), 
+        axis=1).T
+    x_colname = 'x1'
+    x_label = x_colname
+    y_label = 'y'
+    output_filename = f'quantile_plot_{x_label}.png'
+    output_filepath = output_path / output_filename
+
+    plot_scatter_regression_with_parameters(
+        x, y, x_label, y_label, 
+        line_xs, line_ys,
+        scatter_n=1000, scatter_n_seed=29344,
+        output_filepath=output_filepath)
+
+
 
 
 if __name__ == '__main__':
