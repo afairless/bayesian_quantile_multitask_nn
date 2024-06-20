@@ -5,8 +5,11 @@ data {
   vector[N] y;           // outcome/response variable
 
   // predictor/x values at which to predict response/y values
-  int<lower=0> predict_y_given_x_n;      // number of x values
+  int<lower=0> predict_y_given_x_n;             // number of x values
   matrix[predict_y_given_x_n, K] predict_y_given_x;
+
+  int<lower=0> predict_y_given_regular_x_n;     // number of x values
+  matrix[predict_y_given_regular_x_n, K] predict_y_given_regular_x;
 }
 parameters {
   real alpha;
@@ -21,7 +24,9 @@ model {
 }
 generated quantities {
   vector[predict_y_given_x_n] predicted_y_given_x;
+  vector[predict_y_given_regular_x_n] predicted_y_given_regular_x;
   
   // generate response/y values at the given predictor/x values
   predicted_y_given_x = predict_y_given_x * beta + alpha + normal_rng(0, sigma);
+  predicted_y_given_regular_x = predict_y_given_regular_x * beta + alpha + normal_rng(0, sigma);
 }

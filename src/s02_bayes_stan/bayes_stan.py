@@ -509,10 +509,20 @@ def main():
     x_sample = x[sample_idx, :]
     y_sample = y[sample_idx]
 
+    # set up regular intervals of 'x's for model to predict
+    x_min = x.min()
+    x_max = x.max()
+    line_xs_n = 100
+    line_xs: np.ndarray = np.linspace(x_min, x_max, line_xs_n)
+    line_xs = line_xs.reshape(-1, 1)
+
     stan_data = {
         'N': n, 'K': k, 'x': x, 'y': y,
         'predict_y_given_x_n': x_sample.shape[0],
-        'predict_y_given_x': x_sample}
+        'predict_y_given_x': x_sample,
+        'predict_y_given_regular_x_n': line_xs.shape[0],
+        'predict_y_given_regular_x': line_xs,
+        }
     stan_filename = 's02_bayes_stan.stan'
     stan_filepath = Path.cwd() / 'src' / 'stan_code' / stan_filename
 
@@ -530,13 +540,6 @@ def main():
 
     save_summaries(fit_df, fit_model, output_path)
     save_plots(x_sample, y_sample, fit_df, fit_model, output_path)
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
