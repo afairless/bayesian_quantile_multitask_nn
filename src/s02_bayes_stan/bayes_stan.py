@@ -479,6 +479,16 @@ def save_plots(
     plt.close()
 
 
+def calculate_posterior_quantiles(fit_df: pd.DataFrame):
+    regular_x_ys_str = 'predicted_y_given_regular_x'
+    regular_x_ys_colnames = [e for e in fit_df.columns if regular_x_ys_str in e]
+    regular_x_ys = fit_df[regular_x_ys_colnames]
+    assert isinstance(regular_x_ys, pd.DataFrame)
+    posterior_quantiles = np.arange(0.1, 0.91, 0.1)
+    regular_x_ys_quantiles = regular_x_ys.quantile(posterior_quantiles).values.T
+    return regular_x_ys_quantiles 
+
+
 def plot_scatter_and_regression(
     x: pd.Series, y: pd.Series, 
     line_xs: np.ndarray=np.array([]), line_ys: np.ndarray=np.array([]), 
@@ -533,6 +543,13 @@ def plot_scatter_regression_with_parameters(
         virtual environment
     """
 
+    # save regression predicted 'x' and 'y' values
+    output_path = output_filepath.parent
+    array_output_filepath = output_path / 'line_xs.npy'
+    np.savetxt(array_output_filepath, line_xs, delimiter=',')
+    array_output_filepath = output_path / 'line_ys.npy'
+    np.savetxt(array_output_filepath, line_ys, delimiter=',')
+
     # sample data points, so that not all have to be plotted 
     # use Pandas to match similar function 
     x_sample = pd.Series(x[:, 0]).sample(
@@ -581,6 +598,7 @@ def main():
     sample_idx = np_choice(range(n), sample_n, replace=False)
     x_sample = x[sample_idx, :]
     y_sample = y[sample_idx]
+    x_y_colnames = [f'x{i+1}' for i in range(x.shape[1])] + ['y']
 
     # set up regular intervals of 'x's for model to predict
     x_min = x.min()
@@ -614,23 +632,18 @@ def main():
     save_summaries(fit_df, fit_model, output_path)
     save_plots(x_sample, y_sample, fit_df, fit_model, output_path)
 
-    line_ys = np.repeat(
-        np.array([-0.3, 0, 0.6]).reshape(-1, 1), 
-        len(line_xs), 
-        axis=1).T
-    x_colname = 'x1'
-    x_label = x_colname
-    y_label = 'y'
-    output_filename = f'quantile_plot_{x_label}.png'
+ 
+    line_ys = calculate_posterior_quantiles(fit_df)
+    x_colname = x_y_colnames[0]
+    y_colname = x_y_colnames[-1]
+    output_filename = f'quantile_plot_{x_colname}.png'
     output_filepath = output_path / output_filename
 
     plot_scatter_regression_with_parameters(
-        x, y, x_label, y_label, 
+        x, y, x_colname, y_colname, 
         line_xs, line_ys,
         scatter_n=1000, scatter_n_seed=29344,
         output_filepath=output_filepath)
-
-
 
 
 if __name__ == '__main__':

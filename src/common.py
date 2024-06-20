@@ -331,7 +331,7 @@ def plot_scatter_regression_with_parameters(
     line_xs = np.linspace(x_min, x_max, line_xs_n)
     line_ys = line_ys_func(line_xs=line_xs, **kwargs)
 
-    # save regression 'x' and 'y' values
+    # save regression predicted 'x' and 'y' values
     output_path = output_filepath.parent
     array_output_filepath = output_path / 'line_xs.npy'
     np.savetxt(array_output_filepath, line_xs, delimiter=',')
