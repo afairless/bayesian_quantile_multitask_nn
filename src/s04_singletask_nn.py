@@ -161,7 +161,7 @@ def predict_line_ys(models: list[nn.Module], line_xs: np.ndarray) -> np.ndarray:
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's04_pytorch'
+    output_path = Path.cwd() / 'output' / 's04_singletask_nn'
     output_path.mkdir(exist_ok=True, parents=True)
 
     mvn_components = create_data_with_parameters()

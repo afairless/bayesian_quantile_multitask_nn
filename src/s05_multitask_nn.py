@@ -217,7 +217,7 @@ def predict_line_ys(
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's05_multitask'
+    output_path = Path.cwd() / 'output' / 's05_multitask_nn'
     output_path.mkdir(exist_ok=True, parents=True)
 
     mvn_components = create_data_with_parameters()
