@@ -46,7 +46,7 @@ else:
         evaluate_bin_uniformity)
 
 
-class Task0(nn.Module):
+class SingleTasker(nn.Module):
     def __init__(self):
 
         super().__init__()
@@ -320,17 +320,18 @@ def main():
     # 
     ##################################################
 
-    # x, y = extract_data_df_columns(data_df)
-    # y_bin_counts = bin_y_values_by_x_bins(
-    #     x, y, 1000, line_ys_func=predict_line_ys, models=models)
+    x, y = extract_data_df_columns(data_df)
+    y_bin_counts = bin_y_values_by_x_bins(
+        x, y, 1000, line_ys_func=predict_line_ys, model=model, 
+        task_ids=task_ids)
 
-    # output_filename = 'binned_quantiles_by_x_bins.png'
-    # output_filepath = output_path / output_filename
-    # plot_distribution_by_bin(y_bin_counts, output_filepath)
+    output_filename = 'binned_quantiles_by_x_bins.png'
+    output_filepath = output_path / output_filename
+    plot_distribution_by_bin(y_bin_counts, output_filepath)
 
-    # output_filename = 'uniformity_summary.txt'
-    # output_filepath = output_path / output_filename
-    # evaluate_bin_uniformity(y_bin_counts, output_filepath)
+    output_filename = 'uniformity_summary.txt'
+    output_filepath = output_path / output_filename
+    evaluate_bin_uniformity(y_bin_counts, output_filepath)
 
 
 
