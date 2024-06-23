@@ -47,12 +47,17 @@ else:
 
 
 class SingleTasker(nn.Module):
-    def __init__(self):
+
+    def __init__(
+        self, 
+        input_size=1, 
+        hidden_size_0=12, hidden_size_1=6, 
+        output_size=1):
 
         super().__init__()
-        self.l0 = nn.Linear(1, 12)
-        self.l1 = nn.Linear(12, 6)
-        self.l2 = nn.Linear(6, 1)
+        self.l0 = nn.Linear(input_size, hidden_size_0)
+        self.l1 = nn.Linear(hidden_size_0, hidden_size_1)
+        self.l2 = nn.Linear(hidden_size_1, output_size)
 
     def forward(self, x: torch.Tensor):
         x = self.l0(x)
@@ -64,46 +69,30 @@ class SingleTasker(nn.Module):
 
 
 class MultiTasker(nn.Module):
-    def __init__(self):
 
+    def __init__(
+        self, tasks_n=9, 
+        input_size=1, 
+        hidden_size_0=12, hidden_size_1=6, 
+        output_size=1):
+        
         super().__init__()
-        self.l0 = nn.Linear(1, 12)
-        self.l1 = nn.Linear(12, 6)
-        self.l2_0 = nn.Linear(6, 1)
-        self.l2_1 = nn.Linear(6, 1)
-        self.l2_2 = nn.Linear(6, 1)
-        self.l2_3 = nn.Linear(6, 1)
-        self.l2_4 = nn.Linear(6, 1)
-        self.l2_5 = nn.Linear(6, 1)
-        self.l2_6 = nn.Linear(6, 1)
-        self.l2_7 = nn.Linear(6, 1)
-        self.l2_8 = nn.Linear(6, 1)
+        self.l0 = nn.Linear(input_size, hidden_size_0)
+        self.l1 = nn.Linear(hidden_size_0, hidden_size_1)
+        self.l2 = nn.ModuleList(
+            [nn.Linear(hidden_size_1, output_size) for _ in range(tasks_n)])
 
     def forward(self, x: torch.Tensor, task_id: int):
         x = self.l0(x)
         x = torch.relu(x)
         x = self.l1(x)
         x = torch.relu(x)
-        if task_id == 0:
-            x = self.l2_0(x)
-        elif task_id == 1:
-            x = self.l2_1(x)
-        elif task_id == 2:
-            x = self.l2_2(x)
-        elif task_id == 3:
-            x = self.l2_3(x)
-        elif task_id == 4:
-            x = self.l2_4(x)
-        elif task_id == 5:
-            x = self.l2_5(x)
-        elif task_id == 6:
-            x = self.l2_6(x)
-        elif task_id == 7:
-            x = self.l2_7(x)
-        elif task_id == 8:
-            x = self.l2_8(x)
+        
+        if task_id < len(self.l2):
+            x = self.l2[task_id](x)
         else:
             raise ValueError('Invalid task_id')
+        
         return x
 
 
@@ -313,7 +302,6 @@ def main():
         line_ys_func=predict_line_ys, 
         output_filepath=output_filepath, model=model,
         task_ids=task_ids)
-
 
 
     ##################################################
