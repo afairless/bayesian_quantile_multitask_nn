@@ -17,7 +17,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 if __name__ == '__main__':
 
     from s01_generate_data.generate_data import (
-        create_mvn_data_with_parameters, 
+        create_data_01_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 else:
 
     from src.s01_generate_data.generate_data import (
-        create_mvn_data_with_parameters, 
+        create_data_01_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -164,7 +164,7 @@ def main():
     output_path = Path.cwd() / 'output' / 's04_singletask_nn'
     output_path.mkdir(exist_ok=True, parents=True)
 
-    mvn_components = create_mvn_data_with_parameters()
+    mvn_components = create_data_01_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 

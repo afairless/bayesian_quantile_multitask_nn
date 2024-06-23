@@ -572,7 +572,7 @@ def plot_scatter_regression_with_parameters(
 
 def main():
 
-    input_path = Path.cwd() / 'output' / 'data'
+    input_path = Path.cwd() / 'output' / 'data01'
     input_filepaths = list(input_path.glob('*.json'))
 
     for e in input_filepaths:

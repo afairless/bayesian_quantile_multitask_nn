@@ -3,6 +3,7 @@
 import json
 import numpy as np
 from pathlib import Path
+from typing import Callable
 from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split as skl_data_split 
 from sklearn.preprocessing import StandardScaler
@@ -120,6 +121,25 @@ def create_correlation_matrix(dimension_n: int, seed: int) -> np.ndarray:
         semi-definiteness; I haven't verified that mathematically, but tests
         with the Python package 'hypothesis' (see 'tests' directory) haven't
         found a counter-example
+
+    NOTE: method seems to always produce positive correlations; to produce full
+        range of correlations, should probably randomize the correlation signs
+
+        variables_n = 2
+        corr_min = 1
+        corr_max = -1
+        seed = 22612
+        for i in range(20000):
+            corr = create_correlation_matrix(variables_n, seed+i)[0, 1]
+            if corr < corr_min:
+                corr_min = corr
+            if corr > corr_max:
+                corr_max = corr
+
+        >>> corr_min
+        0.009584113380426256
+        >>> corr_max
+        0.9999999995835868
     """
 
     assert dimension_n >= 2
@@ -188,7 +208,7 @@ def create_multivariate_normal_data(
     return mvnc
 
 
-def create_mvn_data_with_parameters() -> MultivariateNormalComponents:
+def create_data_01_with_parameters() -> MultivariateNormalComponents:
     """
     Create multivariate normal data with standard parameters
     """
@@ -205,7 +225,7 @@ def create_mvn_data_with_parameters() -> MultivariateNormalComponents:
     return mvnc
 
 
-def create_bulge_data_with_parameters() -> MultivariateNormalComponents:
+def create_data_02_with_parameters() -> MultivariateNormalComponents:
     """
     Create multivariate normal data with standard parameters
     """
@@ -215,9 +235,11 @@ def create_bulge_data_with_parameters() -> MultivariateNormalComponents:
     variables_n = predictors_n + 1
     noise_factor = 1
 
-    seed = 50319
+    # seed = 21944
+    seed = 92061
     mvnc = create_multivariate_normal_data(
         cases_n, variables_n, seed, True, True, noise_factor)
+    mvnc.linear_regression_coefficients
 
     x_bin_n = 100
     x = mvnc.cases_data[:, mvnc.predictors_column_idxs]
@@ -226,8 +248,14 @@ def create_bulge_data_with_parameters() -> MultivariateNormalComponents:
 
     x_bin_trig_period = convert_bin_idxs_to_trig_period(
         x_bin_idxs, x_bin_idxs.max())
-    x_bin_sin = np.sin(x_bin_trig_period)
-    
+    x_bin_sin = np.sin(x_bin_trig_period).flatten()
+
+    above_mean_bool = x > (x * mvnc.linear_regression_coefficients)
+    above_mean_factor = np.where(above_mean_bool, 1, -1).flatten()
+    magnitude_factor = 3
+
+    mvnc.cases_data[:, mvnc.response_column_idx] += (
+        magnitude_factor * above_mean_factor * x_bin_sin)
 
     return mvnc
 
@@ -300,16 +328,15 @@ def scale_data(
     return scaled_data
 
 
-def save_data():
+def save_data(create_data_with_parameters: Callable, output_path: Path):
     """
     Serialize data to disk as JSON files for downstream processing with
         incompatible development environments
     """
 
-    output_path = Path.cwd() / 'output' / 'data'
     output_path.mkdir(parents=True, exist_ok=True)
 
-    mvn_components = create_mvn_data_with_parameters()
+    mvn_components = create_data_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 
@@ -348,4 +375,9 @@ def save_data():
 
 
 if __name__ == '__main__':
-    save_data()
+
+    output_path = Path.cwd() / 'output' / 'data01'
+    save_data(create_data_01_with_parameters, output_path)
+
+    output_path = Path.cwd() / 'output' / 'data02'
+    save_data(create_data_02_with_parameters, output_path)
