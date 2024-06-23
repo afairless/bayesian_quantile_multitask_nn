@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Callable
 
+import torch.utils.data as torch_utils
+from torch.utils.tensorboard.writer import SummaryWriter
+
 
 ##################################################
 # FUNCTIONS FOR TEXT FILES
@@ -132,6 +135,46 @@ def print_loop_status_with_elapsed_time(
 
         print('Elapsed time: {}'.format(seconds_to_formatted_time_string(
             elapsed_time)))
+
+
+##################################################
+# FUNCTIONS FOR TRAINING NEURAL NETWORK
+##################################################
+
+
+def extract_data_from_dataloader_batches(
+    dataloader: torch_utils.DataLoader) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Extract all predictor and response variable data from a DataLoader by 
+        iterating through it
+    """
+
+    x_list = []
+    y_list = []
+
+    for batch_x, batch_y in dataloader:
+        x_list.append(batch_x)
+        y_list.append(batch_y)
+
+    x = torch.concatenate(x_list, axis=0)
+    y = torch.concatenate(y_list, axis=0)
+
+    return x, y
+
+
+def log_loss_to_tensorboard(
+    loss: torch.Tensor, loss_name: str, writer: SummaryWriter, 
+    epoch: int, loader: torch_utils.DataLoader, batch_idx: int):
+    """
+    Log a loss value to TensorBoard and print it to the console
+    """
+
+    print(
+        f'Epoch {epoch}, '
+        f'Batch {batch_idx+1}/{len(loader)}: '
+        f'{loss_name}={loss.item()}')
+    global_step_n = epoch * len(loader) + batch_idx
+    writer.add_scalar(loss_name, loss.item(), global_step_n)
 
 
 ##################################################

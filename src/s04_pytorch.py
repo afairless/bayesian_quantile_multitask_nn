@@ -24,6 +24,8 @@ if __name__ == '__main__':
     from common import (
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
+        extract_data_from_dataloader_batches,
+        log_loss_to_tensorboard,
         calculate_quantile_loss,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
@@ -39,46 +41,13 @@ else:
     from src.common import (
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
+        extract_data_from_dataloader_batches,
+        log_loss_to_tensorboard,
         calculate_quantile_loss,
         extract_data_df_columns,
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
         evaluate_bin_uniformity)
-
-
-def extract_data_from_dataloader_batches(
-    dataloader: torch_utils.DataLoader) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Extract all predictor and response variable data from a DataLoader by 
-        iterating through it
-    """
-
-    x_list = []
-    y_list = []
-
-    for batch_x, batch_y in dataloader:
-        x_list.append(batch_x)
-        y_list.append(batch_y)
-
-    x = torch.concatenate(x_list, axis=0)
-    y = torch.concatenate(y_list, axis=0)
-
-    return x, y
-
-
-def log_loss_to_tensorboard(
-    loss: torch.Tensor, loss_name: str, writer: SummaryWriter, 
-    epoch: int, loader: torch_utils.DataLoader, batch_idx: int):
-    """
-    Log a loss value to TensorBoard and print it to the console
-    """
-
-    print(
-        f'Epoch {epoch}, '
-        f'Batch {batch_idx+1}/{len(loader)}: '
-        f'{loss_name}={loss.item()}')
-    global_step_n = epoch * len(loader) + batch_idx
-    writer.add_scalar(loss_name, loss.item(), global_step_n)
 
 
 def train_model(
