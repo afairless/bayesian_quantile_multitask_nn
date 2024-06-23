@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 
 from s01_generate_data.generate_data import (
-    create_data_with_parameters, 
+    create_mvn_data_with_parameters, 
     split_data_with_parameters,
     scale_data)
 
@@ -14,7 +14,7 @@ import statsmodels.api as sm
 
 def main():
 
-    mvn_components = create_data_with_parameters()
+    mvn_components = create_mvn_data_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 

@@ -8,6 +8,14 @@ from sklearn.model_selection import train_test_split as skl_data_split
 from sklearn.preprocessing import StandardScaler
 
 
+if __name__ == '__main__':
+
+    from common import convert_bin_idxs_to_trig_period
+else:
+
+    from src.common import convert_bin_idxs_to_trig_period
+
+
 @dataclass
 class MultivariateNormalComponents:
 
@@ -180,7 +188,7 @@ def create_multivariate_normal_data(
     return mvnc
 
 
-def create_data_with_parameters() -> MultivariateNormalComponents:
+def create_mvn_data_with_parameters() -> MultivariateNormalComponents:
     """
     Create multivariate normal data with standard parameters
     """
@@ -193,6 +201,33 @@ def create_data_with_parameters() -> MultivariateNormalComponents:
     seed = 50319
     mvnc = create_multivariate_normal_data(
         cases_n, variables_n, seed, True, True, noise_factor)
+
+    return mvnc
+
+
+def create_bulge_data_with_parameters() -> MultivariateNormalComponents:
+    """
+    Create multivariate normal data with standard parameters
+    """
+
+    cases_n = 1_000_000
+    predictors_n = 1
+    variables_n = predictors_n + 1
+    noise_factor = 1
+
+    seed = 50319
+    mvnc = create_multivariate_normal_data(
+        cases_n, variables_n, seed, True, True, noise_factor)
+
+    x_bin_n = 100
+    x = mvnc.cases_data[:, mvnc.predictors_column_idxs]
+    line_xs = np.linspace(x.min(), x.max(), x_bin_n)
+    x_bin_idxs = np.digitize(x, bins=line_xs)
+
+    x_bin_trig_period = convert_bin_idxs_to_trig_period(
+        x_bin_idxs, x_bin_idxs.max())
+    x_bin_sin = np.sin(x_bin_trig_period)
+    
 
     return mvnc
 
@@ -274,7 +309,7 @@ def save_data():
     output_path = Path.cwd() / 'output' / 'data'
     output_path.mkdir(parents=True, exist_ok=True)
 
-    mvn_components = create_data_with_parameters()
+    mvn_components = create_mvn_data_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 
