@@ -17,7 +17,10 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 if __name__ == '__main__':
 
     from s01_generate_data import (
+        MultivariateNormalComponents, 
+        ScaledData, 
         create_data_01_with_parameters, 
+        create_data_02_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -34,7 +37,10 @@ if __name__ == '__main__':
 else:
 
     from src.s01_generate_data import (
+        MultivariateNormalComponents, 
+        ScaledData, 
         create_data_01_with_parameters, 
+        create_data_02_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -215,17 +221,14 @@ def predict_line_ys(
     return line_ys  
 
 
-def main():
+def process_data(
+    mvn_components: MultivariateNormalComponents, scaled_data: ScaledData, 
+    output_path: Path):
+    """
+    Model and report results for data set
+    """
 
-    output_path = Path.cwd() / 'output' / 's05_multitask_nn'
     output_path.mkdir(exist_ok=True, parents=True)
-
-    mvn_components = create_data_01_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
 
 
     ##################################################
@@ -290,6 +293,26 @@ def main():
     output_filepath = output_path / output_filename
     evaluate_bin_uniformity(y_bin_counts, output_filepath)
 
+
+def main():
+
+    output_path = Path.cwd() / 'output' / 's05_multitask_nn_data01'
+    mvn_components = create_data_01_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(mvn_components, scaled_data, output_path)
+
+    output_path = Path.cwd() / 'output' / 's05_multitask_nn_data02'
+    mvn_components = create_data_02_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(mvn_components, scaled_data, output_path)
 
 
 if __name__ == '__main__':
