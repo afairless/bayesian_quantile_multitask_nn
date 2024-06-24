@@ -374,10 +374,15 @@ def save_data(create_data_with_parameters: Callable, output_path: Path):
             json.dump(array_list, json_file)
 
 
-if __name__ == '__main__':
+def main():
 
     output_path = Path.cwd() / 'output' / 'data01'
     save_data(create_data_01_with_parameters, output_path)
 
     output_path = Path.cwd() / 'output' / 'data02'
     save_data(create_data_02_with_parameters, output_path)
+
+
+if __name__ == '__main__':
+    main()
+
