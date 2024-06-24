@@ -16,7 +16,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 if __name__ == '__main__':
 
-    from s01_generate_data.generate_data import (
+    from s01_generate_data import (
         create_data_01_with_parameters, 
         split_data_with_parameters,
         scale_data)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         evaluate_bin_uniformity)
 else:
 
-    from src.s01_generate_data.generate_data import (
+    from src.s01_generate_data import (
         create_data_01_with_parameters, 
         split_data_with_parameters,
         scale_data)
