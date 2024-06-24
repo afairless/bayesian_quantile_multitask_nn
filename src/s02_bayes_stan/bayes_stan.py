@@ -570,9 +570,8 @@ def plot_scatter_regression_with_parameters(
         output_filepath=output_filepath)
 
 
-def main():
+def process_data(input_path: Path, output_path: Path):
 
-    input_path = Path.cwd() / 'output' / 'data01'
     input_filepaths = list(input_path.glob('*.json'))
 
     for e in input_filepaths:
@@ -582,7 +581,6 @@ def main():
 
         globals()[e.stem] = np.array(json_obj)
 
-    output_path = Path.cwd() / 'output' / 's02_bayes_stan'
     output_path.mkdir(parents=True, exist_ok=True)
 
     # variables are assigned by 'globals' above
@@ -644,6 +642,17 @@ def main():
         line_xs, line_ys,
         scatter_n=1000, scatter_n_seed=29344,
         output_filepath=output_filepath)
+
+
+def main():
+
+    input_path = Path.cwd() / 'output' / 'data01'
+    output_path = Path.cwd() / 'output' / 's02_bayes_stan_data01'
+    process_data(input_path, output_path)
+
+    input_path = Path.cwd() / 'output' / 'data02'
+    output_path = Path.cwd() / 'output' / 's02_bayes_stan_data02'
+    process_data(input_path, output_path)
 
 
 if __name__ == '__main__':
