@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 
-from s01_generate_data.generate_data import (
+from s01_generate_data import (
     create_data_01_with_parameters, 
     split_data_with_parameters,
     scale_data)

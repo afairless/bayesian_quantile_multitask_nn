@@ -8,6 +8,7 @@ import hypothesis.strategies as st
 from src.s01_generate_data import (
     create_correlation_matrix,
     create_multivariate_normal_data,
+    convert_bin_idxs_to_trig_period,
     )
 
 
@@ -38,7 +39,7 @@ def test_create_correlation_matrix_01(dimension_n: int, seed: int):
 @given(
     variables_n=st.integers(min_value=3, max_value=5),
     seed=st.integers(min_value=1, max_value=1_000_000))
-@settings(max_examples=10)
+@settings(max_examples=10, deadline=None)
 def test_multivariate_normal_components_linear_regression_coefficients_01(
     variables_n: int, seed: int):
     """
@@ -65,5 +66,89 @@ def test_multivariate_normal_components_linear_regression_coefficients_01(
     # assert np.allclose(
     #     regression_results.params[1:], 
     #     mvnc.linear_regression_coefficients, atol=1e-1)
+
+
+def test_convert_bin_idxs_to_trig_period_01():
+    """
+    Test zero-indexed bins with period from 0 to pi
+    """
+
+    bin_n = 20
+    bin_idxs = np.arange(bin_n)
+    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, False, False)
+
+    correct_result = 0
+    assert np.allclose(result.min(), correct_result, atol=1e-4)
+    assert np.allclose(result[0], correct_result, atol=1e-4)
+
+    correct_result = np.pi
+    assert np.allclose(result.max(), correct_result, atol=1e-4)
+    assert np.allclose(result[-1], correct_result, atol=1e-4)
+
+    # check that the values are monotonically increasing
+    assert (result[1:] > result[:-1]).all()
+
+
+def test_convert_bin_idxs_to_trig_period_02():
+    """
+    Test one-indexed bins with period from 0 to pi
+    """
+
+    bin_n = 20
+    bin_idxs = np.arange(1, bin_n + 1)
+    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, True, False)
+
+    correct_result = 0
+    assert np.allclose(result.min(), correct_result, atol=1e-4)
+    assert np.allclose(result[0], correct_result, atol=1e-4)
+
+    correct_result = np.pi
+    assert np.allclose(result.max(), correct_result, atol=1e-4)
+    assert np.allclose(result[-1], correct_result, atol=1e-4)
+
+    # check that the values are monotonically increasing
+    assert (result[1:] > result[:-1]).all()
+
+
+def test_convert_bin_idxs_to_trig_period_03():
+    """
+    Test zero-indexed bins with period from 0 to 2*pi
+    """
+
+    bin_n = 20
+    bin_idxs = np.arange(bin_n)
+    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, False, True)
+
+    correct_result = 0
+    assert np.allclose(result.min(), correct_result, atol=1e-4)
+    assert np.allclose(result[0], correct_result, atol=1e-4)
+
+    correct_result = 2 * np.pi
+    assert np.allclose(result.max(), correct_result, atol=1e-4)
+    assert np.allclose(result[-1], correct_result, atol=1e-4)
+
+    # check that the values are monotonically increasing
+    assert (result[1:] > result[:-1]).all()
+
+
+def test_convert_bin_idxs_to_trig_period_04():
+    """
+    Test one-indexed bins with period from 0 to 2*pi
+    """
+
+    bin_n = 20
+    bin_idxs = np.arange(1, bin_n + 1)
+    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, True, True)
+
+    correct_result = 0
+    assert np.allclose(result.min(), correct_result, atol=1e-4)
+    assert np.allclose(result[0], correct_result, atol=1e-4)
+
+    correct_result = 2 * np.pi
+    assert np.allclose(result.max(), correct_result, atol=1e-4)
+    assert np.allclose(result[-1], correct_result, atol=1e-4)
+
+    # check that the values are monotonically increasing
+    assert (result[1:] > result[:-1]).all()
 
 

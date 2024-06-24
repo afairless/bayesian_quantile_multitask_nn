@@ -6,7 +6,6 @@ import numpy as np
 from src.common import (
     calculate_quantile_loss,
     enforce_bin_monotonicity,
-    convert_bin_idxs_to_trig_period,
     )
 
 
@@ -510,89 +509,5 @@ def test_enforce_bin_monotonicity_11():
 
     correct_result = np.array([3, 2, 1, 0, 0, 0, -2, -3])
     assert np.allclose(result, correct_result, atol=1e-4)
-
-
-def test_convert_bin_idxs_to_trig_period_01():
-    """
-    Test zero-indexed bins with period from 0 to pi
-    """
-
-    bin_n = 20
-    bin_idxs = np.arange(bin_n)
-    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, False, False)
-
-    correct_result = 0
-    assert np.allclose(result.min(), correct_result, atol=1e-4)
-    assert np.allclose(result[0], correct_result, atol=1e-4)
-
-    correct_result = np.pi
-    assert np.allclose(result.max(), correct_result, atol=1e-4)
-    assert np.allclose(result[-1], correct_result, atol=1e-4)
-
-    # check that the values are monotonically increasing
-    assert (result[1:] > result[:-1]).all()
-
-
-def test_convert_bin_idxs_to_trig_period_02():
-    """
-    Test one-indexed bins with period from 0 to pi
-    """
-
-    bin_n = 20
-    bin_idxs = np.arange(1, bin_n + 1)
-    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, True, False)
-
-    correct_result = 0
-    assert np.allclose(result.min(), correct_result, atol=1e-4)
-    assert np.allclose(result[0], correct_result, atol=1e-4)
-
-    correct_result = np.pi
-    assert np.allclose(result.max(), correct_result, atol=1e-4)
-    assert np.allclose(result[-1], correct_result, atol=1e-4)
-
-    # check that the values are monotonically increasing
-    assert (result[1:] > result[:-1]).all()
-
-
-def test_convert_bin_idxs_to_trig_period_03():
-    """
-    Test zero-indexed bins with period from 0 to 2*pi
-    """
-
-    bin_n = 20
-    bin_idxs = np.arange(bin_n)
-    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, False, True)
-
-    correct_result = 0
-    assert np.allclose(result.min(), correct_result, atol=1e-4)
-    assert np.allclose(result[0], correct_result, atol=1e-4)
-
-    correct_result = 2 * np.pi
-    assert np.allclose(result.max(), correct_result, atol=1e-4)
-    assert np.allclose(result[-1], correct_result, atol=1e-4)
-
-    # check that the values are monotonically increasing
-    assert (result[1:] > result[:-1]).all()
-
-
-def test_convert_bin_idxs_to_trig_period_04():
-    """
-    Test one-indexed bins with period from 0 to 2*pi
-    """
-
-    bin_n = 20
-    bin_idxs = np.arange(1, bin_n + 1)
-    result = convert_bin_idxs_to_trig_period(bin_idxs, bin_n, True, True)
-
-    correct_result = 0
-    assert np.allclose(result.min(), correct_result, atol=1e-4)
-    assert np.allclose(result[0], correct_result, atol=1e-4)
-
-    correct_result = 2 * np.pi
-    assert np.allclose(result.max(), correct_result, atol=1e-4)
-    assert np.allclose(result[-1], correct_result, atol=1e-4)
-
-    # check that the values are monotonically increasing
-    assert (result[1:] > result[:-1]).all()
 
 

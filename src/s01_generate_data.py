@@ -9,14 +9,6 @@ from sklearn.model_selection import train_test_split as skl_data_split
 from sklearn.preprocessing import StandardScaler
 
 
-if __name__ == '__main__':
-
-    from common import convert_bin_idxs_to_trig_period
-else:
-
-    from src.common import convert_bin_idxs_to_trig_period
-
-
 @dataclass
 class MultivariateNormalComponents:
 
@@ -223,6 +215,35 @@ def create_data_01_with_parameters() -> MultivariateNormalComponents:
         cases_n, variables_n, seed, True, True, noise_factor)
 
     return mvnc
+
+
+def convert_bin_idxs_to_trig_period(
+    bin_idxs: np.ndarray, bins_n: int, one_index: bool=True, 
+    two_times_pi: bool=True) -> np.ndarray:
+    """
+    Given an array of bin indices, convert them to a trigonometric period from
+        0 to 2*pi or from 0 to pi
+
+    'bin_idxs' - array of bin indices
+    'bins_n' - total number of bins for which 'bin_idxs' were calculated, 
+        including bins that may not be present in 'bin_idxs'
+    'one_index' - if 'True', bin indices are 1-indexed; if 'False' they are 
+        0-indexed
+    'two_times_pi' - if 'True', trigonometric period is from 0 to 2*pi; if 
+        'False', it is from 0 to pi
+    """
+
+    if one_index:
+        bin_idxs = bin_idxs - 1
+
+    if two_times_pi:
+        pi_factor = 2
+    else:
+        pi_factor = 1
+
+    bin_trig_period = bin_idxs * pi_factor * np.pi / (bins_n - 1)
+
+    return bin_trig_period
 
 
 def create_data_02_with_parameters() -> MultivariateNormalComponents:
