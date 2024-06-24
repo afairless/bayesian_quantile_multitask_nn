@@ -67,7 +67,7 @@ def process_data(
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's02_ols_data01'
+    output_path = Path.cwd() / 'output' / 's02_regress_data01'
     mvn_components = create_data_01_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(

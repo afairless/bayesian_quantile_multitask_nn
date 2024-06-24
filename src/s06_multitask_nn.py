@@ -56,8 +56,58 @@ else:
         evaluate_bin_uniformity)
 
 
+class SingleTasker(nn.Module):
+
+    def __init__(
+        self, 
+        input_size=1, 
+        hidden_size_0=12, hidden_size_1=6, 
+        output_size=1):
+
+        super().__init__()
+        self.l0 = nn.Linear(input_size, hidden_size_0)
+        self.l1 = nn.Linear(hidden_size_0, hidden_size_1)
+        self.l2 = nn.Linear(hidden_size_1, output_size)
+
+    def forward(self, x: torch.Tensor):
+        x = self.l0(x)
+        x = torch.relu(x)
+        x = self.l1(x)
+        x = torch.relu(x)
+        x = self.l2(x)
+        return x
+
+
+class MultiTasker(nn.Module):
+
+    def __init__(
+        self, tasks_n=9, 
+        input_size=1, 
+        hidden_size_0=12, hidden_size_1=6, 
+        output_size=1):
+        
+        super().__init__()
+        self.l0 = nn.Linear(input_size, hidden_size_0)
+        self.l1 = nn.Linear(hidden_size_0, hidden_size_1)
+        self.l2 = nn.ModuleList(
+            [nn.Linear(hidden_size_1, output_size) for _ in range(tasks_n)])
+
+    def forward(self, x: torch.Tensor, task_id: int):
+        x = self.l0(x)
+        x = torch.relu(x)
+        x = self.l1(x)
+        x = torch.relu(x)
+        
+        if task_id < len(self.l2):
+            x = self.l2[task_id](x)
+        else:
+            raise ValueError('Invalid task_id')
+        
+        return x
+
+
 def train_model(
-    quantile: float,
+    quantiles: np.ndarray,
     train_x_y: torch_utils.TensorDataset, 
     valid_x_y: torch_utils.TensorDataset,
     output_path: Path) -> nn.Module:
@@ -68,12 +118,7 @@ def train_model(
     tensorboard_path = output_path / 'runs'
     writer = SummaryWriter(tensorboard_path)
 
-    model = nn.Sequential(
-        nn.Linear(1, 12),
-        nn.ReLU(),
-        nn.Linear(12, 6),
-        nn.ReLU(),
-        nn.Linear(6, 1))
+    model = MultiTasker()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
 
@@ -97,23 +142,33 @@ def train_model(
         model.train()
         for i, (batch_x, batch_y) in enumerate(train_loader):
 
-            y_predict = model(batch_x).reshape(-1)
-            loss = calculate_quantile_loss(quantile, y_predict, batch_y)
+            quantile_losses = []
+            for q in range(len(quantiles)):
+                y_predict = model(batch_x, task_id=q).reshape(-1)
+                loss = calculate_quantile_loss(quantiles[q], y_predict, batch_y)
+                quantile_losses.append(loss)
+
+            loss = quantile_losses[0]
+            for l in range(1, len(quantile_losses)):
+                loss += quantile_losses[l]
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            if i % 1000 == 0:
+            if i % 100 == 0:
                 log_loss_to_tensorboard(
                     loss, 'train_loss', writer, epoch, train_loader, i)
 
         model.eval()
 
         valid_x, valid_y = extract_data_from_dataloader_batches(valid_loader)
-        valid_y_predict = model(valid_x).reshape(-1)
 
-        valid_loss = calculate_quantile_loss(quantile, valid_y_predict, valid_y)
+        y_predict = model(valid_x, task_id=0).reshape(-1)
+        loss_0 = calculate_quantile_loss(quantiles[1], y_predict, valid_y)
+        y_predict = model(valid_x, task_id=1).reshape(-1)
+        loss_1 = calculate_quantile_loss(quantiles[-2], y_predict, valid_y)
+        valid_loss = loss_0 + loss_1
 
         log_loss_to_tensorboard(
             valid_loss, 'valid_loss', writer, epoch, valid_loader, i)
@@ -135,7 +190,7 @@ def train_model(
 
 
 def predict_line_ys_per_model(
-    model: nn.Module, line_xs: np.ndarray) -> np.ndarray:
+    model: nn.Module, line_xs: np.ndarray, task_id: int) -> np.ndarray:
     """
     Calculate quantile predictions for given x-values for a model
     """
@@ -143,21 +198,22 @@ def predict_line_ys_per_model(
     line_xs_tensor = torch.from_numpy(line_xs).float().reshape(-1, 1)
 
     with torch.no_grad():
-        line_ys_tensor = model(line_xs_tensor)
+        line_ys_tensor = model(line_xs_tensor, task_id=task_id)
 
     line_ys = line_ys_tensor.numpy() 
 
     return line_ys  
 
 
-def predict_line_ys(models: list[nn.Module], line_xs: np.ndarray) -> np.ndarray:
+def predict_line_ys(
+    model: nn.Module, line_xs: np.ndarray, task_ids: list[int]) -> np.ndarray:
     """
     Calculate quantile predictions for given x-values for multiple models
     """
 
     line_ys_list = []
-    for model in models:
-        line_ys_one_model = predict_line_ys_per_model(model, line_xs)
+    for task_id in task_ids:
+        line_ys_one_model = predict_line_ys_per_model(model, line_xs, task_id)
         line_ys_list.append(line_ys_one_model)
 
     line_ys = np.concatenate(line_ys_list, axis=1)
@@ -192,13 +248,9 @@ def process_data(
     valid_x_y = torch_utils.TensorDataset(valid_x, valid_y)
 
     quantiles = np.arange(0.1, 0.91, 0.1)
+    task_ids = list(range(len(quantiles)))
 
-    models = []
-    for quantile in quantiles:
-        print(f'\nQuantile: {round(quantile, 2)}')
-        model = train_model(quantile, train_x_y, valid_x_y, output_path)
-        models.append(model)
-
+    model = train_model(quantiles, train_x_y, valid_x_y, output_path)
 
 
     # plot scatterplot and quantile regression lines over each predictor
@@ -220,8 +272,8 @@ def process_data(
         data_df, x_colname, 'y', line_xs_n=100, 
         scatter_n=1000, scatter_n_seed=29344,
         line_ys_func=predict_line_ys, 
-        output_filepath=output_filepath, models=models)
-
+        output_filepath=output_filepath, model=model,
+        task_ids=task_ids)
 
 
     ##################################################
@@ -230,7 +282,8 @@ def process_data(
 
     x, y = extract_data_df_columns(data_df)
     y_bin_counts = bin_y_values_by_x_bins(
-        x, y, 1000, line_ys_func=predict_line_ys, models=models)
+        x, y, 1000, line_ys_func=predict_line_ys, model=model, 
+        task_ids=task_ids)
 
     output_filename = 'binned_quantiles_by_x_bins.png'
     output_filepath = output_path / output_filename
@@ -243,7 +296,7 @@ def process_data(
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's04_singletask_nn_data01'
+    output_path = Path.cwd() / 'output' / 's06_multitask_nn_data01'
     mvn_components = create_data_01_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
@@ -252,7 +305,7 @@ def main():
         mvn_components.response_column_idx)
     process_data(mvn_components, scaled_data, output_path)
 
-    output_path = Path.cwd() / 'output' / 's04_singletask_nn_data02'
+    output_path = Path.cwd() / 'output' / 's06_multitask_nn_data02'
     mvn_components = create_data_02_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(

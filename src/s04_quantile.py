@@ -329,7 +329,7 @@ def process_data(
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's03_quantile_data01'
+    output_path = Path.cwd() / 'output' / 's04_quantile_data01'
     mvn_components = create_data_01_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
@@ -338,7 +338,7 @@ def main():
         mvn_components.response_column_idx)
     process_data(mvn_components, scaled_data, output_path)
 
-    output_path = Path.cwd() / 'output' / 's03_quantile_data02'
+    output_path = Path.cwd() / 'output' / 's04_quantile_data02'
     mvn_components = create_data_02_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(

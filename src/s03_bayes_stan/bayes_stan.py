@@ -612,7 +612,7 @@ def process_data(input_path: Path, output_path: Path):
         'predict_y_given_regular_x_n': line_xs.shape[0],
         'predict_y_given_regular_x': line_xs,
         }
-    stan_filename = 's02_bayes_stan.stan'
+    stan_filename = 's03_bayes_stan.stan'
     stan_filepath = Path.cwd() / 'src' / 'stan_code' / stan_filename
 
     stan_model = pystan.StanModel(file=stan_filepath.as_posix())
@@ -647,11 +647,11 @@ def process_data(input_path: Path, output_path: Path):
 def main():
 
     input_path = Path.cwd() / 'output' / 'data01'
-    output_path = Path.cwd() / 'output' / 's02_bayes_stan_data01'
+    output_path = Path.cwd() / 'output' / 's03_bayes_stan_data01'
     process_data(input_path, output_path)
 
     input_path = Path.cwd() / 'output' / 'data02'
-    output_path = Path.cwd() / 'output' / 's02_bayes_stan_data02'
+    output_path = Path.cwd() / 'output' / 's03_bayes_stan_data02'
     process_data(input_path, output_path)
 
 
