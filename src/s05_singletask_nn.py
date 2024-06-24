@@ -13,6 +13,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
+from torchview import draw_graph
+
 
 if __name__ == '__main__':
 
@@ -127,9 +129,17 @@ def train_model(
         del valid_loader
 
 
-
     assert isinstance(best_state, dict)
     model.load_state_dict(best_state)
+
+    # save diagram of neural network
+    graph_filename = 'torchview_diagram'
+    model_graph = draw_graph(
+        model, input_data=batch_x, 
+        save_graph=True, 
+        directory=output_path.__str__(), filename=graph_filename,
+        hide_module_functions=False,
+        hide_inner_tensors=True)
 
     return model
 

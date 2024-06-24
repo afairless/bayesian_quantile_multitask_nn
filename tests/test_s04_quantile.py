@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 
-from src.s03_quantile import (
+from src.s04_quantile import (
     calculate_quantile_prediction_vectors,
     calculate_perpendicular_slope,
     calculate_angle_given_slope,
