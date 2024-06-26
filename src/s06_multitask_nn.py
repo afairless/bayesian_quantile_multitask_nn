@@ -132,7 +132,10 @@ def train_model(
     start_time = time.time()
     for epoch in range(epoch_n):
 
+        # added to stop linter from complaining about 'i' being unbound for call 
+        #   to 'log_loss_to_tensorboard'
         i = 0
+
         print(f'Epoch {epoch+1}/{epoch_n}')
         print_loop_status_with_elapsed_time(epoch, 1, epoch_n, start_time)
 
@@ -306,23 +309,28 @@ def process_data(
 
 def main():
 
-    output_path = Path.cwd() / 'output' / 's06_multitask_nn_data01'
-    mvn_components = create_data_01_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(mvn_components, scaled_data, output_path)
+    for i in range(2):
+        output_path = (
+            Path.cwd() / 'output' / ('s06_multitask_nn_data01_' + str(i)))
+        mvn_components = create_data_01_with_parameters()
+        data = split_data_with_parameters(mvn_components.cases_data)
+        scaled_data = scale_data(
+            data.train, data.valid, data.test, 
+            mvn_components.predictors_column_idxs, 
+            mvn_components.response_column_idx)
+        process_data(mvn_components, scaled_data, output_path)
 
-    output_path = Path.cwd() / 'output' / 's06_multitask_nn_data02'
-    mvn_components = create_data_02_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(mvn_components, scaled_data, output_path)
+
+    for i in range(2):
+        output_path = (
+            Path.cwd() / 'output' / ('s06_multitask_nn_data02_' + str(i)))
+        mvn_components = create_data_02_with_parameters()
+        data = split_data_with_parameters(mvn_components.cases_data)
+        scaled_data = scale_data(
+            data.train, data.valid, data.test, 
+            mvn_components.predictors_column_idxs, 
+            mvn_components.response_column_idx)
+        process_data(mvn_components, scaled_data, output_path)
 
 
 if __name__ == '__main__':
