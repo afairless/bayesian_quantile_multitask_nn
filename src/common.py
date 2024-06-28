@@ -267,13 +267,17 @@ def enforce_bin_monotonicity(
 
     if mostly_increasing and not np.all(monotonically_increasing):
         idx = np.where(~monotonically_increasing)[0] + 1
-        for i in idx:
-            bin_cuts[i] = bin_cuts[i-1] + small_difference
+        # there's probably a more efficient, maybe recursive way to do this
+        for i in range(idx[0], len(bin_cuts)):
+            if bin_cuts[i] < bin_cuts[i-1]:
+                bin_cuts[i] = bin_cuts[i-1] + small_difference
 
     if mostly_decreasing and not np.all(monotonically_decreasing):
         idx = np.where(~monotonically_decreasing)[0] + 1
-        for i in idx:
-            bin_cuts[i] = bin_cuts[i-1] - small_difference
+        # there's probably a more efficient, maybe recursive way to do this
+        for i in range(idx[0], len(bin_cuts)):
+            if bin_cuts[i] > bin_cuts[i-1]:
+                bin_cuts[i] = bin_cuts[i-1] - small_difference
 
     return bin_cuts
 

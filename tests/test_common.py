@@ -489,7 +489,7 @@ def test_enforce_bin_monotonicity_09():
 
 def test_enforce_bin_monotonicity_10():
     """
-    Test monotonically increasing input requiring two changes
+    Test monotonically decreasing input requiring two changes
     """
 
     bin_cuts = np.array([3, 2, 3, 0, -1, 1, -3])
@@ -501,13 +501,41 @@ def test_enforce_bin_monotonicity_10():
 
 def test_enforce_bin_monotonicity_11():
     """
-    Test monotonically increasing input requiring two consecutive changes
+    Test monotonically decreasing input requiring two consecutive changes
     """
 
     bin_cuts = np.array([3, 2, 1, 0, 1, 3, -2, -3])
     result = enforce_bin_monotonicity(bin_cuts)
 
     correct_result = np.array([3, 2, 1, 0, 0, 0, -2, -3])
+    assert np.allclose(result, correct_result, atol=1e-4)
+
+
+def test_enforce_bin_monotonicity_12():
+    """
+    Test monotonically increasing input where consecutive elements must be 
+        changed and second element's change must account for first element's 
+        change
+    """
+
+    bin_cuts = np.array([-3, -2, -6, -5, -1, 2, 3])
+    result = enforce_bin_monotonicity(bin_cuts)
+
+    correct_result = np.array([-3, -2, -2, -2, -1, 2, 3])
+    assert np.allclose(result, correct_result, atol=1e-4)
+
+
+def test_enforce_bin_monotonicity_13():
+    """
+    Test monotonically decreasing input where consecutive elements must be 
+        changed and second element's change must account for first element's 
+        change
+    """
+
+    bin_cuts = np.array([3, 2, 6, 5, 1, -2, -3])
+    result = enforce_bin_monotonicity(bin_cuts)
+
+    correct_result = np.array([3, 2, 2, 2, 1, -2, -3])
     assert np.allclose(result, correct_result, atol=1e-4)
 
 
