@@ -539,3 +539,31 @@ def test_enforce_bin_monotonicity_13():
     assert np.allclose(result, correct_result, atol=1e-4)
 
 
+def test_enforce_bin_monotonicity_14():
+    """
+    Test monotonically increasing input where changes in consecutive elements 
+        are evenly divided between increasing and decreasing, but there is an
+        overall increasing trend
+    """
+
+    bin_cuts = np.array([-3, -1, -2, 1, 0, 3, 2])
+    result = enforce_bin_monotonicity(bin_cuts)
+
+    correct_result = np.array([-3, -1, -1, 1, 1, 3, 3])
+    assert np.allclose(result, correct_result, atol=1e-4)
+
+
+def test_enforce_bin_monotonicity_15():
+    """
+    Test monotonically increasing input where changes in consecutive elements 
+        are evenly divided between increasing and decreasing, but there is an
+        overall decreasing trend
+    """
+
+    bin_cuts = np.array([3, 1, 2, -1, 0, -3, -2])
+    result = enforce_bin_monotonicity(bin_cuts)
+
+    correct_result = np.array([3, 1, 1, -1, -1, -3, -3])
+    assert np.allclose(result, correct_result, atol=1e-4)
+
+

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Callable
 
+import statsmodels.api as sm
+
 import torch.utils.data as torch_utils
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -238,6 +240,32 @@ def extract_data_df_columns(
     return x, y
 
 
+def change_bins_for_increasing_monotonicity(
+    monotonically_increasing: np.ndarray, bin_cuts: np.ndarray, 
+    small_difference: float=1e-6) -> np.ndarray:
+
+    idx = np.where(~monotonically_increasing)[0] + 1
+    # there's probably a more efficient, maybe recursive way to do this
+    for i in range(idx[0], len(bin_cuts)):
+        if bin_cuts[i] < bin_cuts[i-1]:
+            bin_cuts[i] = bin_cuts[i-1] + small_difference
+
+    return bin_cuts
+
+
+def change_bins_for_decreasing_monotonicity(
+    monotonically_decreasing: np.ndarray, bin_cuts: np.ndarray, 
+    small_difference: float=1e-6) -> np.ndarray:
+
+    idx = np.where(~monotonically_decreasing)[0] + 1
+    # there's probably a more efficient, maybe recursive way to do this
+    for i in range(idx[0], len(bin_cuts)):
+        if bin_cuts[i] > bin_cuts[i-1]:
+            bin_cuts[i] = bin_cuts[i-1] - small_difference
+
+    return bin_cuts
+
+
 def enforce_bin_monotonicity(
     bin_cuts: np.ndarray, small_difference: float=1e-6) -> np.ndarray:
     """
@@ -266,18 +294,23 @@ def enforce_bin_monotonicity(
     mostly_decreasing = monotonically_decreasing.sum() > (len(bin_cuts) / 2)
 
     if mostly_increasing and not np.all(monotonically_increasing):
-        idx = np.where(~monotonically_increasing)[0] + 1
-        # there's probably a more efficient, maybe recursive way to do this
-        for i in range(idx[0], len(bin_cuts)):
-            if bin_cuts[i] < bin_cuts[i-1]:
-                bin_cuts[i] = bin_cuts[i-1] + small_difference
+        change_bins_for_increasing_monotonicity(
+            monotonically_increasing, bin_cuts, small_difference)
 
     if mostly_decreasing and not np.all(monotonically_decreasing):
-        idx = np.where(~monotonically_decreasing)[0] + 1
-        # there's probably a more efficient, maybe recursive way to do this
-        for i in range(idx[0], len(bin_cuts)):
-            if bin_cuts[i] > bin_cuts[i-1]:
-                bin_cuts[i] = bin_cuts[i-1] - small_difference
+        change_bins_for_decreasing_monotonicity(
+            monotonically_increasing, bin_cuts, small_difference)
+
+    if not mostly_increasing and not mostly_decreasing:
+        x = np.arange(len(bin_cuts))
+        x = sm.add_constant(x)
+        slope = sm.OLS(endog=bin_cuts, exog=x).fit().params[1]
+        if slope > 0:
+            change_bins_for_increasing_monotonicity(
+                monotonically_increasing, bin_cuts, small_difference)
+        if slope < 0:
+            change_bins_for_decreasing_monotonicity(
+                monotonically_decreasing, bin_cuts, small_difference)
 
     return bin_cuts
 
