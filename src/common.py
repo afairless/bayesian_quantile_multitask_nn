@@ -343,10 +343,7 @@ def bin_y_values_by_x_bins(
 
         # 'np.digitize' requires monotonicity
         bin_cuts = enforce_bin_monotonicity(line_ys[i, :])
-        try:
-            x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=bin_cuts)
-        except:
-            breakpoint()
+        x_binned_y_bin_idxs = np.digitize(x_binned_ys, bins=bin_cuts)
         x_binned_y_bin_idxs_compiled = np.concatenate(
             (x_binned_y_bin_idxs_compiled, x_binned_y_bin_idxs))
 
