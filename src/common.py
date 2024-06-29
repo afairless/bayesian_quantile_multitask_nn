@@ -515,6 +515,11 @@ def compile_results_across_runs(output_path_stem: Path, filename_stem: str):
                 uniformity_bins_list.append(bins_arr)
 
     y_bin_counts = np.mean(uniformity_bins_list, axis=0)
+
+    output_filename = 'binned_quantiles_by_x_bins.png'
+    output_filepath = output_path / output_filename
+    plot_distribution_by_bin(y_bin_counts, output_filepath)
+
     output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename
     evaluate_bin_uniformity(y_bin_counts, output_filepath)
