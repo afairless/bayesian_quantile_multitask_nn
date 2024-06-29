@@ -5,7 +5,6 @@ import copy
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from ast import literal_eval
 
 import torch
 import torch.nn as nn
@@ -28,7 +27,6 @@ if __name__ == '__main__':
         scale_data)
 
     from common import (
-        read_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
         extract_data_from_dataloader_batches,
@@ -37,6 +35,7 @@ if __name__ == '__main__':
         extract_data_df_columns,
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
+        compile_results_across_runs,
         evaluate_bin_uniformity)
 else:
 
@@ -49,7 +48,6 @@ else:
         scale_data)
 
     from src.common import (
-        read_text_file,
         print_loop_status_with_elapsed_time,
         plot_scatter_regression_with_parameters,
         extract_data_from_dataloader_batches,
@@ -58,6 +56,7 @@ else:
         extract_data_df_columns,
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
+        compile_results_across_runs,
         evaluate_bin_uniformity)
 
 
@@ -252,48 +251,6 @@ def process_data(
     output_filepath = output_path / output_filename
     plot_distribution_by_bin(y_bin_counts, output_filepath)
 
-    output_filename = 'uniformity_summary.txt'
-    output_filepath = output_path / output_filename
-    evaluate_bin_uniformity(y_bin_counts, output_filepath)
-
-
-def compile_results_across_runs(output_path_stem: Path, filename_stem: str):
-    """
-    Multiple models are trained due to stochastic results; compile results from 
-        each model run and average over them
-    """
-
-    compile_paths = list(output_path_stem.glob(filename_stem + '_*'))
-    output_path = output_path_stem / filename_stem
-    output_path.mkdir(exist_ok=True, parents=True)
-
-    # average 'line_ys' from separate runs
-    line_ys_list = []
-    for path in compile_paths:
-        filename = 'line_ys.npy'
-        filepath = path / filename
-        if filepath.exists:
-            line_ys = np.loadtxt(filepath, delimiter=',')
-            line_ys_list.append(line_ys)
-
-    line_ys_mean = np.mean(line_ys_list, axis=0)
-    output_filepath = output_path / 'line_ys.npy'
-    np.savetxt(output_filepath, line_ys_mean, delimiter=',')
-
-    # average bin counts from separate runs
-    uniformity_bins_list = []
-    for path in compile_paths:
-        filename = 'uniformity_summary.txt'
-        filepath = path / filename
-        if filepath.exists:
-            file_list = read_text_file(filepath)
-            bins_list_str = [e for e in file_list if '[' in e and ']' in e]
-            if bins_list_str:
-                list_str = bins_list_str[0].replace(' ', ', ')
-                bins_arr = np.array(literal_eval(list_str))
-                uniformity_bins_list.append(bins_arr)
-
-    y_bin_counts = np.mean(uniformity_bins_list, axis=0)
     output_filename = 'uniformity_summary.txt'
     output_filepath = output_path / output_filename
     evaluate_bin_uniformity(y_bin_counts, output_filepath)

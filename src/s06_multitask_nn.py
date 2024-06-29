@@ -35,6 +35,7 @@ if __name__ == '__main__':
         extract_data_df_columns,
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
+        compile_results_across_runs,
         evaluate_bin_uniformity)
 else:
 
@@ -55,6 +56,7 @@ else:
         extract_data_df_columns,
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
+        compile_results_across_runs,
         evaluate_bin_uniformity)
 
 
@@ -309,9 +311,11 @@ def process_data(
 
 def main():
 
+    output_path_stem = Path.cwd() / 'output'
+
+    filename_stem = 's06_multitask_nn_data01'
     for i in range(2):
-        output_path = (
-            Path.cwd() / 'output' / ('s06_multitask_nn_data01_' + str(i)))
+        output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_01_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
         scaled_data = scale_data(
@@ -320,10 +324,12 @@ def main():
             mvn_components.response_column_idx)
         process_data(mvn_components, scaled_data, output_path)
 
+    compile_results_across_runs(output_path_stem, filename_stem)
 
+
+    filename_stem = 's06_multitask_nn_data02'
     for i in range(2):
-        output_path = (
-            Path.cwd() / 'output' / ('s06_multitask_nn_data02_' + str(i)))
+        output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_02_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
         scaled_data = scale_data(
@@ -331,6 +337,8 @@ def main():
             mvn_components.predictors_column_idxs, 
             mvn_components.response_column_idx)
         process_data(mvn_components, scaled_data, output_path)
+
+    compile_results_across_runs(output_path_stem, filename_stem)
 
 
 if __name__ == '__main__':
