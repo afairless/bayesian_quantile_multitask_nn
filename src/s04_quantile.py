@@ -28,6 +28,7 @@ if __name__ == '__main__':
         bin_y_values_by_x_bins,
         plot_distribution_by_bin,
         evaluate_bin_uniformity)
+
 else:
 
     from src.s01_generate_data import (
