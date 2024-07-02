@@ -507,7 +507,9 @@ def plot_scatter_and_regression(
     if line_xs.size > 0 and line_ys.size > 0:
         assert len(line_xs) == line_ys.shape[0]
         for i in range(line_ys.shape[1]):
-            plt.plot(line_xs, line_ys[:, i], color='black', linestyle='dotted', zorder=9)
+            plt.plot(
+                line_xs, line_ys[:, i], 
+                color='black', linestyle='dotted', zorder=9)
 
     plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
     plt.axvline(x=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
@@ -581,7 +583,7 @@ def process_data(input_path: Path, output_path: Path):
 
         globals()[e.stem] = np.array(json_obj)
 
-    output_path.mkdir(parents=True, exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
 
     # variables are assigned by 'globals' above
     #   explicate here to reduce complaints from linter

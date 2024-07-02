@@ -373,7 +373,9 @@ def plot_scatter_and_regression(
     if line_xs.size > 0 and line_ys.size > 0:
         assert len(line_xs) == line_ys.shape[0]
         for i in range(line_ys.shape[1]):
-            plt.plot(line_xs, line_ys[:, i], color='black', linestyle='dotted', zorder=9)
+            plt.plot(
+                line_xs, line_ys[:, i], 
+                color='black', linestyle='dotted', zorder=9)
 
     plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
     plt.axvline(x=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
