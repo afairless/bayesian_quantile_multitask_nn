@@ -49,6 +49,17 @@ else:
 
 
 @dataclass
+class DataAttr:
+    path_stem: Path
+    dir_name: str
+    legend_label: str
+    path: Path = Path('')
+
+    def __post_init__(self):
+        self.path = self.path_stem / self.dir_name
+
+
+@dataclass
 class XYDataPairs:
 
     y1: np.ndarray
@@ -108,6 +119,7 @@ def plot_lines_comparison(
     line_ys_1: np.ndarray=np.array([]), 
     line_ys_2: np.ndarray=np.array([]), 
     x_label: str='', y_label: str='', 
+    line_label_1: str='', line_label_2: str='', 
     title: str='', output_filepath: Path=Path('plot.png')):
     """
     Plot two sets of lines with same x-coordinates and different y-coordinates
@@ -124,14 +136,28 @@ def plot_lines_comparison(
     ax.set_facecolor('gray')
 
     for i in range(line_ys_1.shape[1]):
-        plt.plot(
-            line_xs, line_ys_1[:, i], 
-            color='blue', linestyle='solid', zorder=8)
+        # add 'label' for legend only once
+        if i == 0:
+            plt.plot(
+                line_xs, line_ys_1[:, i], 
+                color='blue', linestyle='solid', label=line_label_1,
+                zorder=8)
+        else:
+            plt.plot(
+                line_xs, line_ys_1[:, i], 
+                color='blue', linestyle='solid', zorder=8)
 
     for i in range(line_ys_2.shape[1]):
-        plt.plot(
-            line_xs, line_ys_2[:, i], 
-            color='yellow', linestyle='dotted', zorder=9)
+        # add 'label' for legend only once
+        if i == 0:
+            plt.plot(
+                line_xs, line_ys_2[:, i], 
+                color='yellow', linestyle='dotted', label=line_label_2,
+                zorder=9)
+        else:
+            plt.plot(
+                line_xs, line_ys_2[:, i], 
+                color='yellow', linestyle='dotted', zorder=9)
 
     plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
     plt.axvline(x=0, color='black', linestyle='solid', linewidth=0.5, zorder=1)
@@ -139,6 +165,7 @@ def plot_lines_comparison(
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
+    plt.legend(loc='upper left', fontsize='small')
 
     plt.savefig(output_filepath)
     plt.clf()
@@ -158,56 +185,77 @@ def main():
     s03_fit_df = pl.read_parquet(filepath)
 
 
-    input_dir_name_1 = 's03_bayes_stan_data01'
-    input_dir_path_1 = input_path_stem / input_dir_name_1
-    input_dir_name_2 = 's04_quantile_data01'
-    input_dir_path_2 = input_path_stem / input_dir_name_2
+    ##################################################
+
+    data_str = '_data01'
+    data_attr_1 = DataAttr(
+        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s04_quantiles_data01.png'
+        data_attr_1.path, data_attr_2.path)
+
+    output_filename = 's03_s04_quantiles' + data_str + '.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        line_label_1=data_attr_1.legend_label, 
+        line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
 
-    input_dir_name_1 = 's03_bayes_stan_data01'
-    input_dir_path_1 = input_path_stem / input_dir_name_1
-    input_dir_name_2 = 's06_multitask_nn_data01'
-    input_dir_path_2 = input_path_stem / input_dir_name_2
+
+    ##################################################
+
+    data_str = '_data01'
+    data_attr_1 = DataAttr(
+        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    data_attr_2 = DataAttr(
+        input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s06_quantiles_data01.png'
+        data_attr_1.path, data_attr_2.path)
+
+    output_filename = 's03_s06_quantiles' + data_str + '.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        line_label_1=data_attr_1.legend_label, 
+        line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
 
-    input_dir_name_1 = 's03_bayes_stan_data02'
-    input_dir_path_1 = input_path_stem / input_dir_name_1
-    input_dir_name_2 = 's04_quantile_data02'
-    input_dir_path_2 = input_path_stem / input_dir_name_2
+    data_str = '_data02'
+    data_attr_1 = DataAttr(
+        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s04_quantiles_data02.png'
+        data_attr_1.path, data_attr_2.path)
+
+    output_filename = 's03_s04_quantiles' + data_str + '.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        line_label_1=data_attr_1.legend_label, 
+        line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
 
-    input_dir_name_1 = 's03_bayes_stan_data02'
-    input_dir_path_1 = input_path_stem / input_dir_name_1
-    input_dir_name_2 = 's06_multitask_nn_data02'
-    input_dir_path_2 = input_path_stem / input_dir_name_2
+    data_str = '_data02'
+    data_attr_1 = DataAttr(
+        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    data_attr_2 = DataAttr(
+        input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s06_quantiles_data02.png'
+        data_attr_1.path, data_attr_2.path)
+
+    output_filename = 's03_s06_quantiles' + data_str + '.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        line_label_1=data_attr_1.legend_label, 
+        line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
+
+
 
 
     (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).sum()
