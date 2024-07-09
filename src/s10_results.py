@@ -5,6 +5,7 @@ import pandas as pd
 import polars as pl
 from pathlib import Path
 import matplotlib.pyplot as plt
+from dataclasses import dataclass
 
 
 if __name__ == '__main__':
@@ -45,6 +46,61 @@ else:
         plot_distribution_by_bin,
         compile_results_across_runs,
         evaluate_bin_uniformity)
+
+
+@dataclass
+class XYDataPairs:
+
+    y1: np.ndarray
+    x1: np.ndarray
+
+    y2: np.ndarray
+    x2: np.ndarray
+
+    def __post_init__(self):
+
+        assert self.x1.shape == self.x2.shape
+        assert self.y1.shape == self.y2.shape
+
+        assert self.x1.ndim == 1
+        assert self.x2.ndim == 1
+
+        assert self.x1.shape[0] == self.y1.shape[0]
+        assert self.x2.shape[0] == self.y2.shape[0]
+
+        assert np.allclose(self.x1, self.x2, atol=1e-6)
+
+
+def load_x_y_coords_for_data_pairs(
+    input_path_1: Path, input_path_2: Path,
+    input_x_npy_filename: str='line_xs.npy', 
+    input_y_npy_filename: str='line_ys.npy') -> XYDataPairs:
+    """
+    Load 'x' and 'y' coordinates for two data sets, where 'x' and 'y' 
+        coordinates from each data set are stored in separate Numpy files in 
+        the same directory
+    """
+
+    y_filepath_1 = input_path_1 / input_y_npy_filename
+    x_filepath_1 = input_path_1 / input_x_npy_filename
+    y_filepath_2 = input_path_2 / input_y_npy_filename
+    x_filepath_2 = input_path_2 / input_x_npy_filename
+
+    filepaths = [y_filepath_1, x_filepath_1, y_filepath_2]
+    data = [np.loadtxt(filepath, delimiter=',') for filepath in filepaths]
+
+    # some directories don't have an 'x' file, which should be same for all
+    try:
+        data_x2 = np.loadtxt(x_filepath_2, delimiter=',')
+    except:
+        print(f'No file of x-coordinates found for {x_filepath_2}')
+        data_x2 = data[1]
+
+    data.append(data_x2)
+
+    x_y_data_pairs = XYDataPairs(data[0], data[1], data[2], data[3])
+
+    return x_y_data_pairs
 
 
 def plot_lines_comparison(
@@ -101,45 +157,39 @@ def main():
     filepath = input_path_stem / input_dir_name / filename
     s03_fit_df = pl.read_parquet(filepath)
 
-    filename = 'line_xs.npy'
-    filepath = input_path_stem / input_dir_name / filename
-    s03_line_xs = np.loadtxt(filepath, delimiter=',')
 
-    filename = 'line_ys.npy'
-    filepath = input_path_stem / input_dir_name / filename
-    s03_line_ys = np.loadtxt(filepath, delimiter=',')
-
-
-    input_dir_name = 's04_quantile_data01'
-    filename = 'line_xs.npy'
-    filepath = input_path_stem / input_dir_name / filename
-    s04_line_xs = np.loadtxt(filepath, delimiter=',')
-
-    filename = 'line_ys.npy'
-    filepath = input_path_stem / input_dir_name / filename
-    s04_line_ys = np.loadtxt(filepath, delimiter=',')
-
-    input_dir_name = 's06_multitask_nn_data01'
-    filename = 'line_ys.npy'
-    filepath = input_path_stem / input_dir_name / filename
-    s06_line_ys = np.loadtxt(filepath, delimiter=',')
-
-    assert (s03_line_xs == s04_line_xs).all()
-    line_xs = s03_line_xs
-
+    input_dir_name_1 = 's03_bayes_stan_data01'
+    input_dir_path_1 = input_path_stem / input_dir_name_1
+    input_dir_name_2 = 's04_quantile_data01'
+    input_dir_path_2 = input_path_stem / input_dir_name_2
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        input_dir_path_1, input_dir_path_2)
     output_filename = 's03_s04_quantiles.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
-        line_xs, s03_line_ys, s04_line_ys, output_filepath=output_filepath)
+        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath=output_filepath)
 
+
+    input_dir_name_1 = 's03_bayes_stan_data01'
+    input_dir_path_1 = input_path_stem / input_dir_name_1
+    input_dir_name_2 = 's06_multitask_nn_data01'
+    input_dir_path_2 = input_path_stem / input_dir_name_2
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        input_dir_path_1, input_dir_path_2)
     output_filename = 's03_s06_quantiles.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
-        line_xs, s03_line_ys, s06_line_ys, output_filepath=output_filepath)
+        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath=output_filepath)
 
 
-    (np.abs(s03_line_ys - s04_line_ys)).sum()
-    (np.abs(s03_line_ys - s04_line_ys)).mean()
+    (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).sum()
+    (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).mean()
+
+
+    # todo:  check 2nd data set
+    # plot distributions vs quantiles conditional on x
 
     # filename_stem = 's06_multitask_nn_data02'
     # output_path = output_path_stem / (filename_stem + '_' + str(i))
