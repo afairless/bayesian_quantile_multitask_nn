@@ -164,7 +164,7 @@ def main():
     input_dir_path_2 = input_path_stem / input_dir_name_2
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
         input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s04_quantiles.png'
+    output_filename = 's03_s04_quantiles_data01.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
@@ -177,7 +177,33 @@ def main():
     input_dir_path_2 = input_path_stem / input_dir_name_2
     x_y_data_pairs = load_x_y_coords_for_data_pairs(
         input_dir_path_1, input_dir_path_2)
-    output_filename = 's03_s06_quantiles.png'
+    output_filename = 's03_s06_quantiles_data01.png'
+    output_filepath = output_path / output_filename
+    plot_lines_comparison(
+        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath=output_filepath)
+
+
+    input_dir_name_1 = 's03_bayes_stan_data02'
+    input_dir_path_1 = input_path_stem / input_dir_name_1
+    input_dir_name_2 = 's04_quantile_data02'
+    input_dir_path_2 = input_path_stem / input_dir_name_2
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        input_dir_path_1, input_dir_path_2)
+    output_filename = 's03_s04_quantiles_data02.png'
+    output_filepath = output_path / output_filename
+    plot_lines_comparison(
+        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath=output_filepath)
+
+
+    input_dir_name_1 = 's03_bayes_stan_data02'
+    input_dir_path_1 = input_path_stem / input_dir_name_1
+    input_dir_name_2 = 's06_multitask_nn_data02'
+    input_dir_path_2 = input_path_stem / input_dir_name_2
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        input_dir_path_1, input_dir_path_2)
+    output_filename = 's03_s06_quantiles_data02.png'
     output_filepath = output_path / output_filename
     plot_lines_comparison(
         x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
