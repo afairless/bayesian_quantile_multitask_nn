@@ -333,7 +333,6 @@ def process_data(
         output_filepath=output_filepath)
 
 
-
     line_xs = x_y_data_pairs.x1
     ys = scaled_data.test_y
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
@@ -345,7 +344,6 @@ def process_data(
     x_n = line_xs.shape[0]
     y_and_bins_slices = select_subarray_by_index(
         y_and_bins, 1, x_n, x_slice_n, False)
-
 
     output_filename = 's03_s04_density_by_bin' + data_str + '.png'
     output_filepath = output_path / output_filename
@@ -371,6 +369,24 @@ def process_data(
         line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
+
+    line_xs = x_y_data_pairs.x1
+    ys = scaled_data.test_y
+    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
+    y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
+    y_and_bins = np.concatenate(
+        (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
+
+    x_slice_n = 7
+    x_n = line_xs.shape[0]
+    y_and_bins_slices = select_subarray_by_index(
+        y_and_bins, 1, x_n, x_slice_n, False)
+
+    output_filename = 's03_s06_density_by_bin' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    plot_density_by_bin(
+        y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath)
 
 
 
