@@ -213,15 +213,33 @@ def select_subarray_by_index(
     'total_idx_n' - total number of indices; needed as a parameter because
         arr[:, arr_col_idx] may not include all indices
     'select_idx_n' - number of indices to include in the subset
+
+    Example:
+
+        arr = array([
+               [9, 0],
+               [8, 1],
+               [7, 2],
+               [6, 3],
+               [5, 4]])
+        arr_col_idx = 1
+
+        total_idx_n = 5
+        select_idx_n = 3
+
+        slice_idx = array([0, 2, 4])
+        selected_arr = array([[9, 0],
+                              [7, 2],
+                              [5, 4]])
     """
 
     # verify that the subset of indices is no greater than the total number of 
     #   indices
     assert select_idx_n <= total_idx_n
 
-    x_slice_idx = (
+    slice_idx = (
         np.round(np.linspace(0, total_idx_n-1, select_idx_n)).astype(int))
-    slice_mask = np.isin(arr[:, arr_col_idx], x_slice_idx)
+    slice_mask = np.isin(arr[:, arr_col_idx], slice_idx)
     selected_arr = arr[slice_mask, :]
 
     return selected_arr

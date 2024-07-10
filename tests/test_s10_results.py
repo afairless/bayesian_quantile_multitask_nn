@@ -47,3 +47,92 @@ def test_get_bin_cuts_for_regular_1d_grid_03():
     assert np.allclose(result, correct_result)
 
 
+def test_select_subarray_by_index_01():
+    """
+    Test select_idx_n > total_idx_n
+    """
+
+    arr = np.array([
+        [9, 8, 7, 6, 5],
+        [0, 1, 2, 3, 4]]).transpose()
+    arr_col_idx = 1
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 10
+
+    with pytest.raises(AssertionError):
+        result = select_subarray_by_index(
+            arr, arr_col_idx, total_idx_n, select_idx_n)
+
+
+def test_select_subarray_by_index_02():
+    """
+    Test valid input
+    """
+
+    arr = np.array([
+        [9, 8, 7, 6, 5],
+        [0, 1, 2, 3, 4]]).transpose()
+    arr_col_idx = 1
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 3
+
+    result = select_subarray_by_index(
+        arr, arr_col_idx, total_idx_n, select_idx_n)
+
+    correct_result = np.array([
+        [9, 7, 5],
+        [0, 2, 4]]).transpose()
+
+    assert np.allclose(result, correct_result)
+
+
+def test_select_subarray_by_index_03():
+    """
+    Test valid input
+    """
+
+    arr = np.array([
+        [9, 8, 7, 6, 5],
+        [0, 1, 0, 4, 4]]).transpose()
+    arr_col_idx = 1
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 2
+
+    result = select_subarray_by_index(
+        arr, arr_col_idx, total_idx_n, select_idx_n)
+
+    correct_result = np.array([
+        [9, 7, 6, 5],
+        [0, 0, 4, 4]]).transpose()
+
+    assert np.allclose(result, correct_result)
+
+
+def test_select_subarray_by_index_04():
+    """
+    Test valid input
+    """
+
+    arr = np.array([
+        [0, 1, 0, 4, 4],
+        [9, 8, 7, 6, 5],
+        [5, 6, 7, 8, 9]]).transpose()
+    arr_col_idx = 0
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 2
+
+    result = select_subarray_by_index(
+        arr, arr_col_idx, total_idx_n, select_idx_n)
+
+    correct_result = np.array([
+        [0, 0, 4, 4],
+        [9, 7, 6, 5],
+        [5, 7, 8, 9]]).transpose()
+
+    assert np.allclose(result, correct_result)
+
+
