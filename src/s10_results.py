@@ -250,64 +250,51 @@ def select_subarray_by_index(
     return selected_arr
 
 
-def plot_ridge():
-    colors = ['#0000ff', '#3300cc', '#660099', '#990066', '#cc0033', '#ff0000']
+def plot_density_by_bin(
+    y_and_bins_slices: np.ndarray, 
+    vertical_line_x_coord_1: np.ndarray, vertical_line_x_coord_2: np.ndarray,
+    output_filepath: Path):
+    """
+    Plot density plots for each bin of 'y' values, with two sets of vertical 
+        lines specified by 'vertical_line_x_coord_1' and 
+        'vertical_line_x_coord_2'
 
-    gs = grid_spec.GridSpec(len(countries),1)
-    fig = plt.figure(figsize=(16,9))
-
-    i = 0
-
-    ax_objs = []
-    for country in countries:
-        country = countries[i]
-        x = np.array(data[data.country == country].score)
-        x_d = np.linspace(0,1, 1000)
-
-        kde = KernelDensity(bandwidth=0.03, kernel='gaussian')
-        kde.fit(x[:, None])
-
-        logprob = kde.score_samples(x_d[:, None])
-
-        # creating new axes object
-        ax_objs.append(fig.add_subplot(gs[i:i+1, 0:]))
-
-        # plotting the distribution
-        ax_objs[-1].plot(x_d, np.exp(logprob),color="#f0f0f0",lw=1)
-        ax_objs[-1].fill_between(x_d, np.exp(logprob), alpha=1,color=colors[i])
+    'y_and_bins_slices' - 2-D Numpy array with 'y' values in the first column
+        and bin indices in the second column
+    """
 
 
-        # setting uniform x and y lims
-        ax_objs[-1].set_xlim(0,1)
-        ax_objs[-1].set_ylim(0,2.5)
+    bin_idx = np.unique(y_and_bins_slices[:, 1]).astype(int)
+    # reverse order to plot first bin at bottom and last bin at top
+    bin_idx = bin_idx[::-1] 
 
-        # make background transparent
-        rect = ax_objs[-1].patch
-        rect.set_alpha(0)
+    fig, ax = plt.subplots(len(bin_idx), sharex=False)
 
-        # remove borders, axis ticks, and labels
-        ax_objs[-1].set_yticklabels([])
+    for i, bin in enumerate(bin_idx):
 
-        if i == len(countries)-1:
-            ax_objs[-1].set_xlabel("Test Score", fontsize=16,fontweight="bold")
-        else:
-            ax_objs[-1].set_xticklabels([])
+        v_lines_1 = vertical_line_x_coord_1[bin, :]
+        v_lines_2 = vertical_line_x_coord_2[bin, :]
+        assert len(v_lines_1) == len(v_lines_2)
 
-        spines = ["top","right","left","bottom"]
-        for s in spines:
-            ax_objs[-1].spines[s].set_visible(False)
+        temp_y = y_and_bins_slices[y_and_bins_slices[:, 1] == bin, 0]
 
-        adj_country = country.replace(" ","\n")
-        ax_objs[-1].text(-0.02,0,adj_country,fontweight="bold",fontsize=14,ha="right")
+        _ = sns.kdeplot(
+            ax=ax[i], data=temp_y, fill=True, alpha=0.5, linewidth=1.5,
+            bw_adjust=1)
+        # _ = sns.histplot(
+        #     ax=ax[i], data=temp_y, fill=True, alpha=0.5, linewidth=1.5)
+        for v in range(len(v_lines_1)):
+            _ = ax[i].axvline(
+                v_lines_1[v], color='blue', linestyle='solid', zorder=8)
+            _ = ax[i].axvline(
+                v_lines_2[v], color='yellow', linestyle='dotted', zorder=9)
+        _ = ax[i].xaxis.set_ticklabels([])
+        _ = ax[i].yaxis.set_ticklabels([])
+        _ = ax[i].set_ylabel(f'Bin {int(bin)}')
 
-
-        i += 1
-
-    gs.update(hspace=-0.7)
-
-    fig.text(0.07,0.85,"Distribution of Aptitude Test Results from 18 – 24 year-olds",fontsize=20)
-
-    plt.tight_layout()
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
 
 
 def main():
@@ -340,6 +327,33 @@ def main():
         line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
+
+
+    mvn_components = create_data_01_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+
+    line_xs = x_y_data_pairs.x1
+    ys = scaled_data.test_y
+    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
+    y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
+    y_and_bins = np.concatenate(
+        (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
+
+    x_slice_n = 7
+    x_n = line_xs.shape[0]
+    y_and_bins_slices = select_subarray_by_index(
+        y_and_bins, 1, x_n, x_slice_n, False)
+
+
+    output_filename = 's03_s04_density_by_bin' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    plot_density_by_bin(
+        y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath)
 
 
     ##################################################
@@ -400,93 +414,14 @@ def main():
 
 
 
-    # set up x bins for density plots
-    # x = scaled_data.test_x
-    # x_bin_n = x_y_data_pairs.x1.shape[0]
-    # line_xs = np.linspace(x.min(), x.max(), x_bin_n)
-    # x_bin_idxs = np.digitize(x, bins=line_xs)
-
-    # y = x_y_data_pairs.y1
-    # y.shape
-    # x_slice_n = 7
-    # # assumes y.shape[0] == x.shape[0], which was enforced in XYDataPairs
-    # x_n = x_y_data_pairs.y1.shape[0]
-    # assert x_slice_n < x_n
-    # x_slice_idx = np.round(np.linspace(0, x_n-1, x_slice_n)).astype(int)
-    # x_slice_y = y[x_slice_idx, :]
-    # x_slice_y.shape
-    # flat_x = x_slice_y.flatten()
-    # index_column = np.repeat(np.arange(x_slice_n)[:, np.newaxis], y, axis=1).flatten()[:, np.newaxis]
-    # np.repeat(np.arange(x_slice_n), y)
-
     x_y_data_pairs.x1.shape
     x_y_data_pairs.y1.shape
     x_y_data_pairs.x2.shape
     x_y_data_pairs.y2.shape
 
-    mvn_components = create_data_01_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
+    # for j in range(0, 100, 10):
+    #     np.quantile(x_y_data_pairs.y1[j, :], [0.1, 0.3, 0.5, 0.7, 0.9])
 
-    scaled_data.test_x.shape
-    scaled_data.test_y.shape
-
-    line_xs = x_y_data_pairs.x1
-    ys = scaled_data.test_y
-    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
-    y_and_bins = np.concatenate(
-        (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
-
-    x_slice_n = 7
-    x_n = line_xs.shape[0]
-    y_and_bins_slices = select_subarray_by_index(y_and_bins, 1, x_n, x_slice_n)
-
-
-
-    sns.kdeplot(data=y_and_bins_slices[:, 0], fill=True, alpha=0.5, linewidth=1.5)
-    plt.show()
-    plt.clf()
-    plt.close()
-
-
-    # Initialize the FacetGrid object
-    pal = sns.cubehelix_palette(10, rot=-.25, light=.7)
-    g = sns.FacetGrid(df, row='bin', hue='bin', aspect=15, height=.5, palette=pal)
-
-    g.map(sns.kdeplot, 'y',
-      bw_adjust=.5, clip_on=False,
-      fill=True, alpha=1, linewidth=1.5)
-    g.map(sns.kdeplot, 'y', clip_on=False, color='w', lw=2, bw_adjust=.5)
-
-    # passing color=None to refline() uses the hue mapping
-    g.refline(y=0, linewidth=2, linestyle='-', color=None, clip_on=False)
-
-
-    # Define and use a simple function to label the plot in axes coordinates
-    def label(x, color, label):
-        ax = plt.gca()
-        ax.text(0, .2, label, fontweight='bold', color=color,
-                ha='left', va='center', transform=ax.transAxes)
-
-
-    g.map(label, 'y')
-
-    # Set the subplots to overlap
-    g.figure.subplots_adjust(hspace=-.25)
-
-    # Remove axes details that don't play well with overlap
-    g.set_titles('')
-    g.set(yticks=[], ylabel='')
-    g.despine(bottom=True, left=True)
-
-    g.savefig('plot.png')
-
-    plt.clf()
-    plt.close()
 
     # filename_stem = 's06_multitask_nn_data02'
     # output_path = output_path_stem / (filename_stem + '_' + str(i))
