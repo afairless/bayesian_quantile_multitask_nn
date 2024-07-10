@@ -16,6 +16,8 @@ from sklearn.neighbors import KernelDensity
 if __name__ == '__main__':
 
     from s01_generate_data import (
+        MultivariateNormalComponents, 
+        ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
         split_data_with_parameters,
@@ -35,6 +37,8 @@ if __name__ == '__main__':
 else:
 
     from src.s01_generate_data import (
+        MultivariateNormalComponents, 
+        ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
         split_data_with_parameters,
@@ -278,8 +282,9 @@ def plot_density_by_bin(
 
         temp_y = y_and_bins_slices[y_and_bins_slices[:, 1] == bin, 0]
 
+        ax[i].set_facecolor('gray')
         _ = sns.kdeplot(
-            ax=ax[i], data=temp_y, fill=True, alpha=0.5, linewidth=1.5,
+            ax=ax[i], data=temp_y, fill=True, alpha=1.0, linewidth=1.5,
             bw_adjust=1)
         # _ = sns.histplot(
         #     ax=ax[i], data=temp_y, fill=True, alpha=0.5, linewidth=1.5)
@@ -297,22 +302,22 @@ def plot_density_by_bin(
     plt.close()
 
 
-def main():
+def process_data(
+    input_path_stem: Path, data_str: str, 
+    mvn_components: MultivariateNormalComponents, scaled_data: ScaledData, 
+    output_path: Path):
 
-    output_path = Path.cwd() / 'output' / 's10_results'
+
     output_path.mkdir(exist_ok=True, parents=True)
 
-    input_path_stem = Path.cwd() / 'output_BIG'
-
-    input_dir_name = 's03_bayes_stan_data01'
-    filename = 'fit_df.parquet'
-    filepath = input_path_stem / input_dir_name / filename
-    s03_fit_df = pl.read_parquet(filepath)
+    # input_dir_name = 's03_bayes_stan_data01'
+    # filename = 'fit_df.parquet'
+    # filepath = input_path_stem / input_dir_name / filename
+    # s03_fit_df = pl.read_parquet(filepath)
 
 
     ##################################################
 
-    data_str = '_data01'
     data_attr_1 = DataAttr(
         input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
     data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
@@ -328,13 +333,6 @@ def main():
         output_filepath=output_filepath)
 
 
-
-    mvn_components = create_data_01_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
 
     line_xs = x_y_data_pairs.x1
     ys = scaled_data.test_y
@@ -358,7 +356,6 @@ def main():
 
     ##################################################
 
-    data_str = '_data01'
     data_attr_1 = DataAttr(
         input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
     data_attr_2 = DataAttr(
@@ -374,38 +371,6 @@ def main():
         line_label_2=data_attr_2.legend_label,
         output_filepath=output_filepath)
 
-
-    data_str = '_data02'
-    data_attr_1 = DataAttr(
-        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
-    data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
-    x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        data_attr_1.path, data_attr_2.path)
-
-    output_filename = 's03_s04_quantiles' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_lines_comparison(
-        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        line_label_1=data_attr_1.legend_label, 
-        line_label_2=data_attr_2.legend_label,
-        output_filepath=output_filepath)
-
-
-    data_str = '_data02'
-    data_attr_1 = DataAttr(
-        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
-    data_attr_2 = DataAttr(
-        input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
-    x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        data_attr_1.path, data_attr_2.path)
-
-    output_filename = 's03_s06_quantiles' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_lines_comparison(
-        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        line_label_1=data_attr_1.legend_label, 
-        line_label_2=data_attr_2.legend_label,
-        output_filepath=output_filepath)
 
 
 
@@ -433,6 +398,34 @@ def main():
     #     mvn_components.response_column_idx)
     # process_data(mvn_components, scaled_data, output_path)
     # compile_results_across_runs(output_path_stem, filename_stem)
+
+
+def main():
+
+    input_path_stem = Path.cwd() / 'output_BIG'
+    output_path = Path.cwd() / 'output' / 's10_results'
+
+    data_str = '_data01'
+    mvn_components = create_data_01_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(
+        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+
+
+    data_str = '_data02'
+    mvn_components = create_data_02_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(
+        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+
 
 
 if __name__ == '__main__':
