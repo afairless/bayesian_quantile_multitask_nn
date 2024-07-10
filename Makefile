@@ -19,12 +19,12 @@ step02:
 	python src/s02_regress.py
 	conda deactivate
 	
-step03_only:
+step03:
 	$(CONDA_ACTIVATE) stan
 	python src/s03_bayes_stan/bayes_stan.py
 	conda deactivate
 
-step03: step01 step03_only
+step03_all: step01 step03
 	
 step04:
 	$(CONDA_ACTIVATE) distribution_nn02
