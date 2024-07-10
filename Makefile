@@ -39,4 +39,8 @@ step05:
 step06:
 	$(CONDA_ACTIVATE) distribution_nn02
 	python src/s06_multitask_nn.py
+	
+step10:
+	$(CONDA_ACTIVATE) distribution_nn02
+	python src/s10_results.py
 	conda deactivate
