@@ -136,3 +136,51 @@ def test_select_subarray_by_index_04():
     assert np.allclose(result, correct_result)
 
 
+def test_select_subarray_by_index_05():
+    """
+    Test valid input
+    Exclude end bins, i.e., lowest and highest bins
+    """
+
+    arr = np.array([
+        [9, 8, 7, 6, 5],
+        [0, 1, 2, 3, 4]]).transpose()
+    arr_col_idx = 1
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 3
+
+    result = select_subarray_by_index(
+        arr, arr_col_idx, total_idx_n, select_idx_n, False)
+
+    correct_result = np.array([
+        [7],
+        [2]]).transpose()
+
+    assert np.allclose(result, correct_result)
+
+
+def test_select_subarray_by_index_03():
+    """
+    Test valid input
+    Exclude end bins, i.e., lowest and highest bins
+    """
+
+    arr = np.array([
+        [9, 8, 7, 6, 5],
+        [0, 1, 0, 4, 4]]).transpose()
+    arr_col_idx = 1
+
+    total_idx_n = arr[:, arr_col_idx].max() + 1
+    select_idx_n = 2
+
+    result = select_subarray_by_index(
+        arr, arr_col_idx, total_idx_n, select_idx_n, False)
+
+    correct_result = np.array([
+        [],
+        []]).transpose()
+
+    assert np.allclose(result, correct_result)
+
+

@@ -4,10 +4,13 @@ import numpy as np
 import pandas as pd
 import polars as pl
 from pathlib import Path
-import matplotlib.pyplot as plt
 from dataclasses import dataclass
 
+import matplotlib.pyplot as plt
 import seaborn as sns
+
+from sklearn.neighbors import KernelDensity
+
 
 
 if __name__ == '__main__':
@@ -200,7 +203,8 @@ def get_bin_cuts_for_regular_1d_grid(grid_1d: np.ndarray) -> np.ndarray:
 
 def select_subarray_by_index(
     arr: np.ndarray, arr_col_idx: int,
-    total_idx_n: int, select_idx_n: int) -> np.ndarray:
+    total_idx_n: int, select_idx_n: int,
+    include_end_bins: bool=True) -> np.ndarray:
     """
     Given a 2-D Numpy array 'arr' with a column of indices, select rows that 
         include a subset of the indices
@@ -223,7 +227,6 @@ def select_subarray_by_index(
                [6, 3],
                [5, 4]])
         arr_col_idx = 1
-
         total_idx_n = 5
         select_idx_n = 3
 
@@ -239,10 +242,72 @@ def select_subarray_by_index(
 
     slice_idx = (
         np.round(np.linspace(0, total_idx_n-1, select_idx_n)).astype(int))
+    if not include_end_bins:
+        slice_idx = slice_idx[1:-1] 
     slice_mask = np.isin(arr[:, arr_col_idx], slice_idx)
     selected_arr = arr[slice_mask, :]
 
     return selected_arr
+
+
+def plot_ridge():
+    colors = ['#0000ff', '#3300cc', '#660099', '#990066', '#cc0033', '#ff0000']
+
+    gs = grid_spec.GridSpec(len(countries),1)
+    fig = plt.figure(figsize=(16,9))
+
+    i = 0
+
+    ax_objs = []
+    for country in countries:
+        country = countries[i]
+        x = np.array(data[data.country == country].score)
+        x_d = np.linspace(0,1, 1000)
+
+        kde = KernelDensity(bandwidth=0.03, kernel='gaussian')
+        kde.fit(x[:, None])
+
+        logprob = kde.score_samples(x_d[:, None])
+
+        # creating new axes object
+        ax_objs.append(fig.add_subplot(gs[i:i+1, 0:]))
+
+        # plotting the distribution
+        ax_objs[-1].plot(x_d, np.exp(logprob),color="#f0f0f0",lw=1)
+        ax_objs[-1].fill_between(x_d, np.exp(logprob), alpha=1,color=colors[i])
+
+
+        # setting uniform x and y lims
+        ax_objs[-1].set_xlim(0,1)
+        ax_objs[-1].set_ylim(0,2.5)
+
+        # make background transparent
+        rect = ax_objs[-1].patch
+        rect.set_alpha(0)
+
+        # remove borders, axis ticks, and labels
+        ax_objs[-1].set_yticklabels([])
+
+        if i == len(countries)-1:
+            ax_objs[-1].set_xlabel("Test Score", fontsize=16,fontweight="bold")
+        else:
+            ax_objs[-1].set_xticklabels([])
+
+        spines = ["top","right","left","bottom"]
+        for s in spines:
+            ax_objs[-1].spines[s].set_visible(False)
+
+        adj_country = country.replace(" ","\n")
+        ax_objs[-1].text(-0.02,0,adj_country,fontweight="bold",fontsize=14,ha="right")
+
+
+        i += 1
+
+    gs.update(hspace=-0.7)
+
+    fig.text(0.07,0.85,"Distribution of Aptitude Test Results from 18 – 24 year-olds",fontsize=20)
+
+    plt.tight_layout()
 
 
 def main():
@@ -382,44 +447,40 @@ def main():
 
 
 
+    sns.kdeplot(data=y_and_bins_slices[:, 0], fill=True, alpha=0.5, linewidth=1.5)
+    plt.show()
+    plt.clf()
+    plt.close()
 
-    # get scatter data
-    # plot distributions vs quantiles conditional on x
-    rs = np.random.RandomState(1979)
-    x = rs.randn(500)
-    g = np.tile(list("ABCDEFGHIJ"), 50)
-    df = pd.DataFrame(dict(x=x, g=g))
-    m = df.g.map(ord)
-    df["x"] += m
 
     # Initialize the FacetGrid object
     pal = sns.cubehelix_palette(10, rot=-.25, light=.7)
-    g = sns.FacetGrid(df, row="g", hue="g", aspect=15, height=.5, palette=pal)
+    g = sns.FacetGrid(df, row='bin', hue='bin', aspect=15, height=.5, palette=pal)
 
-    g.map(sns.kdeplot, "x",
+    g.map(sns.kdeplot, 'y',
       bw_adjust=.5, clip_on=False,
       fill=True, alpha=1, linewidth=1.5)
-    g.map(sns.kdeplot, "x", clip_on=False, color="w", lw=2, bw_adjust=.5)
+    g.map(sns.kdeplot, 'y', clip_on=False, color='w', lw=2, bw_adjust=.5)
 
     # passing color=None to refline() uses the hue mapping
-    g.refline(y=0, linewidth=2, linestyle="-", color=None, clip_on=False)
+    g.refline(y=0, linewidth=2, linestyle='-', color=None, clip_on=False)
 
 
     # Define and use a simple function to label the plot in axes coordinates
     def label(x, color, label):
         ax = plt.gca()
-        ax.text(0, .2, label, fontweight="bold", color=color,
-                ha="left", va="center", transform=ax.transAxes)
+        ax.text(0, .2, label, fontweight='bold', color=color,
+                ha='left', va='center', transform=ax.transAxes)
 
 
-    g.map(label, "x")
+    g.map(label, 'y')
 
     # Set the subplots to overlap
     g.figure.subplots_adjust(hspace=-.25)
 
     # Remove axes details that don't play well with overlap
-    g.set_titles("")
-    g.set(yticks=[], ylabel="")
+    g.set_titles('')
+    g.set(yticks=[], ylabel='')
     g.despine(bottom=True, left=True)
 
     g.savefig('plot.png')
