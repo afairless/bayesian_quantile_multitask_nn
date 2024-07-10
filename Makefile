@@ -10,12 +10,12 @@ SHELL = /bin/bash
 CONDA_ACTIVATE = source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate ; conda activate
 
 step01:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s01_generate_data.py
 	conda deactivate
 	
 step02:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s02_regress.py
 	conda deactivate
 	
@@ -27,20 +27,20 @@ step03:
 step03_all: step01 step03
 	
 step04:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s04_quantile.py
 	conda deactivate
 	
 step05:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s05_singletask_nn.py
 	conda deactivate
 	
 step06:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s06_multitask_nn.py
 	
 step10:
-	$(CONDA_ACTIVATE) distribution_nn02
+	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s10_results.py
 	conda deactivate
