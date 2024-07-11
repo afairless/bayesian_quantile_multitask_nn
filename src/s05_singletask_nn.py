@@ -83,10 +83,13 @@ def train_model(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, maximize=False)
 
-    epoch_n = 2
+    epoch_n = 4
 
     best_loss = np.inf
     best_state = None
+    # added to stop linter from complaining about 'batch_x' being unbound for 
+    #   call to 'draw_graph'
+    batch_x = None
 
     start_time = time.time()
     for epoch in range(epoch_n):
@@ -261,9 +264,10 @@ def process_data(
 def main():
 
     output_path_stem = Path.cwd() / 'output'
+    repeat_n = 4
 
     filename_stem = 's05_singletask_nn_data01'
-    for i in range(2):
+    for i in range(repeat_n):
         output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_01_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
@@ -277,7 +281,7 @@ def main():
 
 
     filename_stem = 's05_singletask_nn_data02'
-    for i in range(2):
+    for i in range(repeat_n):
         output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_02_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
@@ -291,7 +295,7 @@ def main():
 
 
     filename_stem = 's05_singletask_nn_data03'
-    for i in range(2):
+    for i in range(repeat_n):
         output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_03_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
