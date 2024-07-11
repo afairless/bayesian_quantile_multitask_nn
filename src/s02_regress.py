@@ -14,6 +14,7 @@ if __name__ == '__main__':
         ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
+        create_data_03_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -25,6 +26,7 @@ else:
         ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
+        create_data_03_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -144,6 +146,15 @@ def main():
 
     output_path = Path.cwd() / 'output' / 's02_regress_data02'
     mvn_components = create_data_02_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(mvn_components, scaled_data, output_path)
+
+    output_path = Path.cwd() / 'output' / 's02_regress_data03'
+    mvn_components = create_data_03_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 

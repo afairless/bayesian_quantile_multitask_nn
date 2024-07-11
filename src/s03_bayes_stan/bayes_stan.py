@@ -648,12 +648,19 @@ def process_data(input_path: Path, output_path: Path):
 
 def main():
 
-    input_path = Path.cwd() / 'output' / 'data01'
-    output_path = Path.cwd() / 'output' / 's03_bayes_stan_data01'
+    data_str = 'data01'
+    input_path = Path.cwd() / 'output' / data_str
+    output_path = Path.cwd() / 'output' / ('s03_bayes_stan_' + data_str)
     process_data(input_path, output_path)
 
-    input_path = Path.cwd() / 'output' / 'data02'
-    output_path = Path.cwd() / 'output' / 's03_bayes_stan_data02'
+    data_str = 'data02'
+    input_path = Path.cwd() / 'output' / data_str
+    output_path = Path.cwd() / 'output' / ('s03_bayes_stan_' + data_str)
+    process_data(input_path, output_path)
+
+    data_str = 'data03'
+    input_path = Path.cwd() / 'output' / data_str
+    output_path = Path.cwd() / 'output' / ('s03_bayes_stan_' + data_str)
     process_data(input_path, output_path)
 
 
