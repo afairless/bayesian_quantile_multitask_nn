@@ -281,6 +281,36 @@ def create_data_02_with_parameters() -> MultivariateNormalComponents:
     return mvnc
 
 
+def create_data_03_with_parameters() -> MultivariateNormalComponents:
+    """
+    Create bivariate uniform-normal data with standard parameters
+    """
+
+    cases_n = 1_000_000
+
+    seed = 29417
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(-4, 4, cases_n)
+    b = 0.7
+    y = b * x + rng.normal(0, 1, cases_n)
+
+    # un_ prefix:  uniform-normal data
+    un_data = np.column_stack((x, y))
+    un_correlation = np.corrcoef(un_data, rowvar=False)
+    un_means = un_data.mean(axis=0)
+    un_stds = un_data.std(axis=0)
+    un_covariance = np.cov(un_data, rowvar=False)
+
+    un = MultivariateNormalComponents(
+        correlation_matrix=un_correlation,
+        means=un_means,
+        standard_deviations=un_stds,
+        covariance=un_covariance,
+        cases_data=un_data)
+
+    return un
+
+
 def split_data_3ways(data_array: np.ndarray, seed: int) -> SplitData:
     """
     Split data into training, validation, and testing sets
@@ -402,6 +432,9 @@ def main():
 
     output_path = Path.cwd() / 'output' / 'data02'
     save_data(create_data_02_with_parameters, output_path)
+
+    output_path = Path.cwd() / 'output' / 'data03'
+    save_data(create_data_03_with_parameters, output_path)
 
 
 if __name__ == '__main__':

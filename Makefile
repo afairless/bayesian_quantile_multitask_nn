@@ -1,7 +1,7 @@
 
 # Handling conda environment in Makefile:
 # 	https://stackoverflow.com/questions/53382383/makefile-cant-use-conda-activate
-# 	Makefile can't use `conda activate`
+# Makefile can't use `conda activate`
 
 .ONESHELL:
 
