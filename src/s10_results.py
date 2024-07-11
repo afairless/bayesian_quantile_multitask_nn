@@ -20,6 +20,7 @@ if __name__ == '__main__':
         ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
+        create_data_03_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -41,6 +42,7 @@ else:
         ScaledData, 
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
+        create_data_03_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -418,7 +420,7 @@ def process_data(
 
 def main():
 
-    input_path_stem = Path.cwd() / 'output_BIG'
+    input_path_stem = Path.cwd() / 'output'
     output_path = Path.cwd() / 'output' / 's10_results'
 
     data_str = '_data01'
@@ -434,6 +436,17 @@ def main():
 
     data_str = '_data02'
     mvn_components = create_data_02_with_parameters()
+    data = split_data_with_parameters(mvn_components.cases_data)
+    scaled_data = scale_data(
+        data.train, data.valid, data.test, 
+        mvn_components.predictors_column_idxs, 
+        mvn_components.response_column_idx)
+    process_data(
+        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+
+
+    data_str = '_data03'
+    mvn_components = create_data_03_with_parameters()
     data = split_data_with_parameters(mvn_components.cases_data)
     scaled_data = scale_data(
         data.train, data.valid, data.test, 
