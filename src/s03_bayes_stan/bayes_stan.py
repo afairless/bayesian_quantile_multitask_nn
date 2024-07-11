@@ -663,6 +663,11 @@ def main():
     output_path = Path.cwd() / 'output' / ('s03_bayes_stan_' + data_str)
     process_data(input_path, output_path)
 
+    data_str = 'data04'
+    input_path = Path.cwd() / 'output' / data_str
+    output_path = Path.cwd() / 'output' / ('s03_bayes_stan_' + data_str)
+    process_data(input_path, output_path)
+
 
 if __name__ == '__main__':
     main()

@@ -24,6 +24,7 @@ if __name__ == '__main__':
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
         create_data_03_with_parameters, 
+        create_data_04_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -46,6 +47,7 @@ else:
         create_data_01_with_parameters, 
         create_data_02_with_parameters, 
         create_data_03_with_parameters, 
+        create_data_04_with_parameters, 
         split_data_with_parameters,
         scale_data)
 
@@ -351,6 +353,20 @@ def main():
     for i in range(repeat_n):
         output_path = output_path_stem / (filename_stem + '_' + str(i))
         mvn_components = create_data_03_with_parameters()
+        data = split_data_with_parameters(mvn_components.cases_data)
+        scaled_data = scale_data(
+            data.train, data.valid, data.test, 
+            mvn_components.predictors_column_idxs, 
+            mvn_components.response_column_idx)
+        process_data(mvn_components, scaled_data, output_path)
+
+    compile_results_across_runs(output_path_stem, filename_stem)
+
+
+    filename_stem = 's06_multitask_nn_data04'
+    for i in range(repeat_n):
+        output_path = output_path_stem / (filename_stem + '_' + str(i))
+        mvn_components = create_data_04_with_parameters()
         data = split_data_with_parameters(mvn_components.cases_data)
         scaled_data = scale_data(
             data.train, data.valid, data.test, 
