@@ -209,6 +209,47 @@ def get_bin_cuts_for_regular_1d_grid(grid_1d: np.ndarray) -> np.ndarray:
     return bin_cuts
 
 
+def plot_distributions_with_quantiles(
+    arrs: list[np.ndarray], title: str, full_width: bool,
+    output_filepath: Path):
+    """
+    Plot distributions of values in each array in 'arrs' along with their 
+        quantiles as vertical lines
+    """
+
+    fig, ax = plt.subplots(1, sharex=False)
+
+    quantiles = [i/10 for i in range(1, 10)]
+    quantile_sets = [np.quantile(arr, quantiles) for arr in arrs]
+
+    all_values = np.concatenate(arrs)
+    ends = np.quantile(all_values, [0.02, 0.98])
+
+    _ = sns.kdeplot(ax=ax, data=arrs, alpha=0.5)
+
+    color_dict = {
+        0: 'blue', 1: 'orange', 2: 'green', 3: 'red', 4: 'purple'}
+    for i, v_set in enumerate(quantile_sets):
+        if i % 2 == 0:
+            linestyle = 'solid'
+        else:
+            linestyle = 'dotted'
+        for line in v_set:
+            _ = ax.axvline(
+                line, color=color_dict[i], linestyle=linestyle, zorder=8)
+
+    # zoom in on x-axis
+    if not full_width:
+        ax.set_xlim(ends)
+
+    plt.title(title)
+    plt.tight_layout()
+
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
+
+
 def select_subarray_by_index(
     arr: np.ndarray, arr_col_idx: int,
     total_idx_n: int, select_idx_n: int,
@@ -338,11 +379,41 @@ def process_data(
 
 
     line_xs = x_y_data_pairs.x1
-    ys = scaled_data.test_y
+    # ys = scaled_data.test_y
+    # I need more samples in each bin, so since data is generated and I know 
+    #   that it all comes from the same distribution, anyway, I'll just use all 
+    #   of it
+    ys = np.concatenate(
+        [scaled_data.train_y, scaled_data.valid_y, scaled_data.test_y])
+
+    y_list = [ys, scaled_data.test_y]
+    output_filename = 'y_distributions' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    title = 'Distributions of all y-values and only test y-values'
+    plot_distributions_with_quantiles(y_list, title, True, output_filepath)
+
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
     y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
     y_and_bins = np.concatenate(
         (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
+
+    bin20 = y_and_bins[y_and_bins[:, 1] == 20, 0]
+    bin50 = y_and_bins[y_and_bins[:, 1] == 50, 0]
+    bin80 = y_and_bins[y_and_bins[:, 1] == 80, 0]
+    bin2575 = y_and_bins[((y_and_bins[:, 1] >= 25) & (y_and_bins[:, 1] < 75)), 0] 
+    # y_and_bins.shape
+    # bin50.shape
+    # bin2575.shape
+    # quantiles = [i/10 for i in range(1, 10)]
+    # np.quantile(y_and_bins[:, 0], quantiles)
+    # np.quantile(bin2575, quantiles)
+    # np.quantile(bin50, quantiles)
+    y_list = [ys, bin2575, bin20, bin50, bin80]
+    output_filename = 'y_distributions_bins25_74' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    title = 'Distributions of all y-values and only bins 25-74'
+    plot_distributions_with_quantiles(y_list, title, False, output_filepath)
+
 
     x_slice_n = 7
     x_n = line_xs.shape[0]
