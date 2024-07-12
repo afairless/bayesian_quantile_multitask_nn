@@ -25,17 +25,6 @@ if __name__ == '__main__':
         split_data_with_parameters,
         scale_data)
 
-    from common import (
-        print_loop_status_with_elapsed_time,
-        plot_scatter_regression_with_parameters,
-        extract_data_from_dataloader_batches,
-        log_loss_to_tensorboard,
-        calculate_quantile_loss,
-        extract_data_df_columns,
-        bin_y_values_by_x_bins,
-        plot_distribution_by_bin,
-        compile_results_across_runs,
-        evaluate_bin_uniformity)
 else:
 
     from src.s01_generate_data import (
@@ -47,18 +36,6 @@ else:
         create_data_04_with_parameters, 
         split_data_with_parameters,
         scale_data)
-
-    from src.common import (
-        print_loop_status_with_elapsed_time,
-        plot_scatter_regression_with_parameters,
-        extract_data_from_dataloader_batches,
-        log_loss_to_tensorboard,
-        calculate_quantile_loss,
-        extract_data_df_columns,
-        bin_y_values_by_x_bins,
-        plot_distribution_by_bin,
-        compile_results_across_runs,
-        evaluate_bin_uniformity)
 
 
 @dataclass
@@ -405,10 +382,13 @@ def process_data(
     # y_and_bins.shape
     # bin50.shape
     # bin2575.shape
-    # quantiles = [i/10 for i in range(1, 10)]
+    # quantiles = [i/10 for i in range(1, 10, 2)]
     # np.quantile(y_and_bins[:, 0], quantiles)
     # np.quantile(bin2575, quantiles)
+    # np.quantile(bin20, quantiles)
     # np.quantile(bin50, quantiles)
+    # np.quantile(bin80, quantiles)
+
     y_list = [ys, bin2575, bin20, bin50, bin80]
     output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
@@ -497,48 +477,66 @@ def main():
     input_path_stem = Path.cwd() / 'output'
     output_path = Path.cwd() / 'output' / 's10_results'
 
-    data_str = '_data01'
-    mvn_components = create_data_01_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(
-        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+    data_sets = [
+        ('_data01', create_data_01_with_parameters),
+        ('_data02', create_data_02_with_parameters),
+        ('_data03', create_data_03_with_parameters),
+        ('_data04', create_data_04_with_parameters)]
+
+    for i in range(len(data_sets)):
+        data_str = data_sets[i][0]
+        mvn_components = data_sets[i][1]()
+        data = split_data_with_parameters(mvn_components.cases_data)
+        scaled_data = scale_data(
+            data.train, data.valid, data.test, 
+            mvn_components.predictors_column_idxs, 
+            mvn_components.response_column_idx)
+        process_data(
+            input_path_stem, data_str, mvn_components, scaled_data, output_path)
 
 
-    data_str = '_data02'
-    mvn_components = create_data_02_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(
-        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+    # data_str = '_data01'
+    # mvn_components = create_data_01_with_parameters()
+    # data = split_data_with_parameters(mvn_components.cases_data)
+    # scaled_data = scale_data(
+    #     data.train, data.valid, data.test, 
+    #     mvn_components.predictors_column_idxs, 
+    #     mvn_components.response_column_idx)
+    # process_data(
+    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
 
 
-    data_str = '_data03'
-    mvn_components = create_data_03_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(
-        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+    # data_str = '_data02'
+    # mvn_components = create_data_02_with_parameters()
+    # data = split_data_with_parameters(mvn_components.cases_data)
+    # scaled_data = scale_data(
+    #     data.train, data.valid, data.test, 
+    #     mvn_components.predictors_column_idxs, 
+    #     mvn_components.response_column_idx)
+    # process_data(
+    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
 
 
-    data_str = '_data04'
-    mvn_components = create_data_04_with_parameters()
-    data = split_data_with_parameters(mvn_components.cases_data)
-    scaled_data = scale_data(
-        data.train, data.valid, data.test, 
-        mvn_components.predictors_column_idxs, 
-        mvn_components.response_column_idx)
-    process_data(
-        input_path_stem, data_str, mvn_components, scaled_data, output_path)
+    # data_str = '_data03'
+    # mvn_components = create_data_03_with_parameters()
+    # data = split_data_with_parameters(mvn_components.cases_data)
+    # scaled_data = scale_data(
+    #     data.train, data.valid, data.test, 
+    #     mvn_components.predictors_column_idxs, 
+    #     mvn_components.response_column_idx)
+    # process_data(
+    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
+
+
+    # data_str = '_data04'
+    # mvn_components = create_data_04_with_parameters()
+    # data = split_data_with_parameters(mvn_components.cases_data)
+    # scaled_data = scale_data(
+    #     data.train, data.valid, data.test, 
+    #     mvn_components.predictors_column_idxs, 
+    #     mvn_components.response_column_idx)
+    # process_data(
+    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
 
 
 if __name__ == '__main__':
