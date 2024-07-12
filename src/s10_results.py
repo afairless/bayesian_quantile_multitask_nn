@@ -397,6 +397,7 @@ def process_data(
     y_and_bins = np.concatenate(
         (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
 
+
     bin20 = y_and_bins[y_and_bins[:, 1] == 20, 0]
     bin50 = y_and_bins[y_and_bins[:, 1] == 50, 0]
     bin80 = y_and_bins[y_and_bins[:, 1] == 80, 0]
@@ -409,9 +410,9 @@ def process_data(
     # np.quantile(bin2575, quantiles)
     # np.quantile(bin50, quantiles)
     y_list = [ys, bin2575, bin20, bin50, bin80]
-    output_filename = 'y_distributions_bins25_74' + data_str + '.png'
+    output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
-    title = 'Distributions of all y-values and only bins 25-74'
+    title = 'Distributions of all y-values and only bins 25-74, 20, 50, 80'
     plot_distributions_with_quantiles(y_list, title, False, output_filepath)
 
 
