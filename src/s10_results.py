@@ -187,6 +187,50 @@ def get_bin_cuts_for_regular_1d_grid(grid_1d: np.ndarray) -> np.ndarray:
 
 
 def plot_distributions_with_quantiles(
+    arrs: list[np.ndarray], title: str, full_width: bool, cumulative: bool,
+    output_filepath: Path):
+    """
+    Plot distributions of values in each array in 'arrs' along with their 
+        quantiles as vertical lines
+    """
+
+    fig, ax = plt.subplots(1, sharex=False)
+
+    quantiles = [i/10 for i in range(1, 10, 2)]
+    quantile_sets = [np.quantile(arr, quantiles) for arr in arrs]
+
+    all_values = np.concatenate(arrs)
+    ends = np.quantile(all_values, [0.02, 0.98])
+
+    palette = {
+        0: 'blue', 1: 'green', 2: 'orange', 3: 'red', 4: 'purple'}
+
+    _ = sns.kdeplot(
+        ax=ax, data=arrs, alpha=0.5, cumulative=cumulative, palette=palette,
+        common_norm=True, common_grid=False)
+
+    for i, v_set in enumerate(quantile_sets):
+        if i < 2:
+            linestyle = 'solid'
+        else:
+            linestyle = 'dotted'
+        for line in v_set:
+            _ = ax.axvline(
+                line, color=palette[i], linestyle=linestyle, zorder=8)
+
+    # zoom in on x-axis
+    if not full_width:
+        ax.set_xlim(ends)
+
+    plt.title(title)
+    plt.tight_layout()
+
+    plt.savefig(output_filepath)
+    plt.clf()
+    plt.close()
+
+
+def plot_distributions_with_quantiles_OLD(
     arrs: list[np.ndarray], title: str, full_width: bool,
     output_filepath: Path):
     """
@@ -367,7 +411,8 @@ def process_data(
     output_filename = 'y_distributions' + data_str + '.png'
     output_filepath = output_path / output_filename
     title = 'Distributions of all y-values and only test y-values'
-    plot_distributions_with_quantiles(y_list, title, True, output_filepath)
+    plot_distributions_with_quantiles(
+        y_list, title, True, False, output_filepath)
 
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
     y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
@@ -393,7 +438,8 @@ def process_data(
     output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
     title = 'Distributions of all y-values and only bins 25-74, 20, 50, 80'
-    plot_distributions_with_quantiles(y_list, title, False, output_filepath)
+    plot_distributions_with_quantiles(
+        y_list, title, False, False, output_filepath)
 
 
     x_slice_n = 7
@@ -493,50 +539,6 @@ def main():
             mvn_components.response_column_idx)
         process_data(
             input_path_stem, data_str, mvn_components, scaled_data, output_path)
-
-
-    # data_str = '_data01'
-    # mvn_components = create_data_01_with_parameters()
-    # data = split_data_with_parameters(mvn_components.cases_data)
-    # scaled_data = scale_data(
-    #     data.train, data.valid, data.test, 
-    #     mvn_components.predictors_column_idxs, 
-    #     mvn_components.response_column_idx)
-    # process_data(
-    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
-
-
-    # data_str = '_data02'
-    # mvn_components = create_data_02_with_parameters()
-    # data = split_data_with_parameters(mvn_components.cases_data)
-    # scaled_data = scale_data(
-    #     data.train, data.valid, data.test, 
-    #     mvn_components.predictors_column_idxs, 
-    #     mvn_components.response_column_idx)
-    # process_data(
-    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
-
-
-    # data_str = '_data03'
-    # mvn_components = create_data_03_with_parameters()
-    # data = split_data_with_parameters(mvn_components.cases_data)
-    # scaled_data = scale_data(
-    #     data.train, data.valid, data.test, 
-    #     mvn_components.predictors_column_idxs, 
-    #     mvn_components.response_column_idx)
-    # process_data(
-    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
-
-
-    # data_str = '_data04'
-    # mvn_components = create_data_04_with_parameters()
-    # data = split_data_with_parameters(mvn_components.cases_data)
-    # scaled_data = scale_data(
-    #     data.train, data.valid, data.test, 
-    #     mvn_components.predictors_column_idxs, 
-    #     mvn_components.response_column_idx)
-    # process_data(
-    #     input_path_stem, data_str, mvn_components, scaled_data, output_path)
 
 
 if __name__ == '__main__':
