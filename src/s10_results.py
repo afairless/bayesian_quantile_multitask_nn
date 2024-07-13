@@ -52,6 +52,8 @@ class DataAttr:
 @dataclass
 class XYDataPairs:
 
+    pair_step_label: str
+
     y1: np.ndarray
     x1: np.ndarray
 
@@ -82,6 +84,12 @@ def load_x_y_coords_for_data_pairs(
         the same directory
     """
 
+    step_number_1 = input_path_1.stem.split('_')[0]
+    step_number_2 = input_path_2.stem.split('_')[0]
+    assert step_number_1[0] == 's'
+    assert step_number_2[0] == 's'
+    pair_step_label = step_number_1 + '_' + step_number_2
+
     y_filepath_1 = input_path_1 / input_y_npy_filename
     x_filepath_1 = input_path_1 / input_x_npy_filename
     y_filepath_2 = input_path_2 / input_y_npy_filename
@@ -90,7 +98,8 @@ def load_x_y_coords_for_data_pairs(
     filepaths = [y_filepath_1, x_filepath_1, y_filepath_2]
     data = [np.loadtxt(filepath, delimiter=',') for filepath in filepaths]
 
-    # some directories don't have an 'x' file, which should be same for all
+    # some directories don't have an 'x' file, which should be same for all data 
+    #   sets
     try:
         data_x2 = np.loadtxt(x_filepath_2, delimiter=',')
     except:
@@ -99,7 +108,8 @@ def load_x_y_coords_for_data_pairs(
 
     data.append(data_x2)
 
-    x_y_data_pairs = XYDataPairs(data[0], data[1], data[2], data[3])
+    x_y_data_pairs = XYDataPairs(
+        pair_step_label, data[0], data[1], data[2], data[3])
 
     return x_y_data_pairs
 
@@ -354,7 +364,7 @@ def select_subarray_by_index(
 
 
 def plot_density_by_bin(
-    y_and_bins_slices: np.ndarray, 
+    y_and_bins_slices: np.ndarray, bin_col_idx: int,
     vertical_line_x_coord_1: np.ndarray, vertical_line_x_coord_2: np.ndarray,
     output_filepath: Path):
     """
@@ -364,10 +374,11 @@ def plot_density_by_bin(
 
     'y_and_bins_slices' - 2-D Numpy array with 'y' values in the first column
         and bin indices in the second column
+    'bin_col_idx' - index of the column in 'y_and_bins_slices' with the bin 
+        indices
     """
 
-
-    bin_idx = np.unique(y_and_bins_slices[:, 1]).astype(int)
+    bin_idx = np.unique(y_and_bins_slices[:, bin_col_idx]).astype(int)
     # reverse order to plot first bin at bottom and last bin at top
     bin_idx = bin_idx[::-1] 
 
@@ -379,7 +390,7 @@ def plot_density_by_bin(
         v_lines_2 = vertical_line_x_coord_2[bin, :]
         assert len(v_lines_1) == len(v_lines_2)
 
-        temp_y = y_and_bins_slices[y_and_bins_slices[:, 1] == bin, 0]
+        temp_y = y_and_bins_slices[y_and_bins_slices[:, bin_col_idx] == bin, 1]
 
         ax[i].set_facecolor('gray')
         _ = sns.kdeplot(
@@ -400,6 +411,54 @@ def plot_density_by_bin(
     plt.clf()
     plt.close()
 
+
+def process_data_set_pairs(
+    data_attr_1: DataAttr, data_attr_2: DataAttr, 
+    data_str: str, scaled_data: ScaledData, output_path: Path, 
+    line_xs: np.ndarray):
+    """
+    Analyze and plot data that compare two data sets
+    """
+
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        data_attr_1.path, data_attr_2.path)
+
+    
+    output_filename = (
+        x_y_data_pairs.pair_step_label + '_quantiles' + data_str + '.png')
+    output_filepath = output_path / output_filename
+    plot_lines_comparison(
+        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        line_label_1=data_attr_1.legend_label, 
+        line_label_2=data_attr_2.legend_label,
+        output_filepath=output_filepath)
+
+
+    # ys = scaled_data.test_y
+    # xs = scaled_data.test_x
+    ys = np.concatenate(
+        [scaled_data.train_y, scaled_data.valid_y, scaled_data.test_y])
+    xs = np.concatenate(
+        [scaled_data.train_x, scaled_data.valid_x, scaled_data.test_x])
+    x_y_bins = bin_y_by_x(xs, ys, line_xs)
+    x_slice_n = 7
+    x_n = line_xs.shape[0]
+    bin_col_idx = 2
+    y_and_bins_slices = select_subarray_by_index(
+        x_y_bins, bin_col_idx, x_n, x_slice_n, False)
+    output_filename = (
+        x_y_data_pairs.pair_step_label + '_density_by_bin' + data_str + '.png')
+    output_filepath = output_path / output_filename
+    plot_density_by_bin(
+        y_and_bins_slices, bin_col_idx, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+        output_filepath)
+
+    # (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).sum()
+    # (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).mean()
+    # x_y_data_pairs.x1.shape
+    # x_y_data_pairs.y1.shape
+    # x_y_data_pairs.x2.shape
+    # x_y_data_pairs.y2.shape
 
 
 def process_data(
@@ -435,6 +494,7 @@ def process_data(
     plot_distributions_with_quantiles(
         y_list, title, True, False, output_filepath)
 
+
     line_xs = get_line_xs(input_path_stem, data_str)
     x_y_bins = bin_y_by_x(xs, ys, line_xs)
 
@@ -442,9 +502,10 @@ def process_data(
     output_filepath = output_path / output_filename
     plot_bin_idx(xs, ys, x_y_bins[:, 2], output_filepath)
 
-    bin20 = x_y_bins[x_y_bins[:, 2] == 20, 0]
-    bin50 = x_y_bins[x_y_bins[:, 2] == 50, 0]
-    bin80 = x_y_bins[x_y_bins[:, 2] == 80, 0]
+    bin20 = x_y_bins[x_y_bins[:, 2] == 20, 1]
+    bin50 = x_y_bins[x_y_bins[:, 2] == 50, 1]
+    bin80 = x_y_bins[x_y_bins[:, 2] == 80, 1]
+
     y_list = [ys, bin20, bin50, bin80]
     output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
@@ -458,79 +519,76 @@ def process_data(
     data_attr_1 = DataAttr(
         input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
     data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
-    x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        data_attr_1.path, data_attr_2.path)
-
-    output_filename = 's03_s04_quantiles' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_lines_comparison(
-        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        line_label_1=data_attr_1.legend_label, 
-        line_label_2=data_attr_2.legend_label,
-        output_filepath=output_filepath)
-
-
-    line_xs = x_y_data_pairs.x1
-    x_slice_n = 7
-    x_n = line_xs.shape[0]
-    y_and_bins_slices = select_subarray_by_index(
-        x_y_bins, 2, x_n, x_slice_n, False)
-
-    output_filename = 's03_s04_density_by_bin' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_density_by_bin(
-        y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        output_filepath)
-
-
-    ##################################################
-    ##################################################
-    ##################################################
-    ##################################################
-
+    process_data_set_pairs(
+        data_attr_1, data_attr_2, data_str, scaled_data, output_path, line_xs)
+    
+    
     data_attr_1 = DataAttr(
         input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
     data_attr_2 = DataAttr(
         input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
-    x_y_data_pairs = load_x_y_coords_for_data_pairs(
-        data_attr_1.path, data_attr_2.path)
-
-    output_filename = 's03_s06_quantiles' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_lines_comparison(
-        x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        line_label_1=data_attr_1.legend_label, 
-        line_label_2=data_attr_2.legend_label,
-        output_filepath=output_filepath)
-
-
-    line_xs = x_y_data_pairs.x1
-    ys = scaled_data.test_y
-    xs = scaled_data.test_x
-    x_y_bins = bin_y_by_x(xs, ys, line_xs)
-
-    x_slice_n = 7
-    x_n = line_xs.shape[0]
-    y_and_bins_slices = select_subarray_by_index(
-        x_y_bins, 2, x_n, x_slice_n, False)
-
-    output_filename = 's03_s06_density_by_bin' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_density_by_bin(
-        y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        output_filepath)
+    process_data_set_pairs(
+        data_attr_1, data_attr_2, data_str, scaled_data, output_path, line_xs)
+    # output_filename = (
+    #     x_y_data_pairs.pair_step_label + '_quantiles' + data_str + '.png')
+    # output_filepath = output_path / output_filename
+    # plot_lines_comparison(
+    #     x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+    #     line_label_1=data_attr_1.legend_label, 
+    #     line_label_2=data_attr_2.legend_label,
+    #     output_filepath=output_filepath)
 
 
+    # ys = scaled_data.test_y
+    # xs = scaled_data.test_x
+    # x_y_bins = bin_y_by_x(xs, ys, line_xs)
+    # x_slice_n = 7
+    # x_n = line_xs.shape[0]
+    # y_and_bins_slices = select_subarray_by_index(
+    #     x_y_bins, 2, x_n, x_slice_n, False)
+    # output_filename = (
+    #     x_y_data_pairs.pair_step_label + '_density_by_bin' + data_str + '.png')
+    # output_filepath = output_path / output_filename
+    # plot_density_by_bin(
+    #     y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+    #     output_filepath)
 
-    (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).sum()
-    (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).mean()
+
+    ##################################################
+    ##################################################
+    ##################################################
+    ##################################################
+
+    # data_attr_1 = DataAttr(
+    #     input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    # data_attr_2 = DataAttr(
+    #     input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
+    # x_y_data_pairs = load_x_y_coords_for_data_pairs(
+    #     data_attr_1.path, data_attr_2.path)
+
+    # output_filename = 's03_s06_quantiles' + data_str + '.png'
+    # output_filepath = output_path / output_filename
+    # plot_lines_comparison(
+    #     x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+    #     line_label_1=data_attr_1.legend_label, 
+    #     line_label_2=data_attr_2.legend_label,
+    #     output_filepath=output_filepath)
 
 
+    # ys = scaled_data.test_y
+    # xs = scaled_data.test_x
+    # x_y_bins = bin_y_by_x(xs, ys, line_xs)
+    # x_slice_n = 7
+    # x_n = line_xs.shape[0]
+    # y_and_bins_slices = select_subarray_by_index(
+    #     x_y_bins, 2, x_n, x_slice_n, False)
+    # output_filename = 's03_s06_density_by_bin' + data_str + '.png'
+    # output_filepath = output_path / output_filename
+    # plot_density_by_bin(
+    #     y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
+    #     output_filepath)
 
-    x_y_data_pairs.x1.shape
-    x_y_data_pairs.y1.shape
-    x_y_data_pairs.x2.shape
-    x_y_data_pairs.y2.shape
+
 
     # for j in range(0, 100, 10):
     #     np.quantile(x_y_data_pairs.y1[j, :], [0.1, 0.3, 0.5, 0.7, 0.9])
