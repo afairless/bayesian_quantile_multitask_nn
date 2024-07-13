@@ -230,41 +230,14 @@ def plot_distributions_with_quantiles(
     plt.close()
 
 
-def plot_distributions_with_quantiles_OLD(
-    arrs: list[np.ndarray], title: str, full_width: bool,
-    output_filepath: Path):
+def plot_bin_idx(
+    x: np.ndarray, y: np.ndarray, bin_idx: np.ndarray, output_filepath: Path):
     """
-    Plot distributions of values in each array in 'arrs' along with their 
-        quantiles as vertical lines
+    Plot a scatter plot of 'x' and 'y' values, colored by bin indices 'bin_idx'
     """
 
-    fig, ax = plt.subplots(1, sharex=False)
-
-    quantiles = [i/10 for i in range(1, 10)]
-    quantile_sets = [np.quantile(arr, quantiles) for arr in arrs]
-
-    all_values = np.concatenate(arrs)
-    ends = np.quantile(all_values, [0.02, 0.98])
-
-    _ = sns.kdeplot(ax=ax, data=arrs, alpha=0.5)
-
-    color_dict = {
-        0: 'blue', 1: 'orange', 2: 'green', 3: 'red', 4: 'purple'}
-    for i, v_set in enumerate(quantile_sets):
-        if i % 2 == 0:
-            linestyle = 'solid'
-        else:
-            linestyle = 'dotted'
-        for line in v_set:
-            _ = ax.axvline(
-                line, color=color_dict[i], linestyle=linestyle, zorder=8)
-
-    # zoom in on x-axis
-    if not full_width:
-        ax.set_xlim(ends)
-
-    plt.title(title)
-    plt.tight_layout()
+    plt.scatter(x, y, alpha=0.1, c=bin_idx)
+    plt.title('Scatter plot colored by bin indices')
 
     plt.savefig(output_filepath)
     plt.clf()
@@ -368,6 +341,7 @@ def plot_density_by_bin(
     plt.close()
 
 
+
 def process_data(
     input_path_stem: Path, data_str: str, 
     mvn_components: MultivariateNormalComponents, scaled_data: ScaledData, 
@@ -406,6 +380,8 @@ def process_data(
     #   of it
     ys = np.concatenate(
         [scaled_data.train_y, scaled_data.valid_y, scaled_data.test_y])
+    xs = np.concatenate(
+        [scaled_data.train_x, scaled_data.valid_x, scaled_data.test_x])
 
     y_list = [ys, scaled_data.test_y]
     output_filename = 'y_distributions' + data_str + '.png'
@@ -415,29 +391,21 @@ def process_data(
         y_list, title, True, False, output_filepath)
 
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
+    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
     y_and_bins = np.concatenate(
-        (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
+        (ys.reshape(-1, 1), x_bin_idx.reshape(-1, 1)), axis=1)
 
+    output_filename = 'x_y_with_bin_color' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    plot_bin_idx(xs, ys, x_bin_idx, output_filepath)
 
     bin20 = y_and_bins[y_and_bins[:, 1] == 20, 0]
     bin50 = y_and_bins[y_and_bins[:, 1] == 50, 0]
     bin80 = y_and_bins[y_and_bins[:, 1] == 80, 0]
-    bin2575 = y_and_bins[((y_and_bins[:, 1] >= 25) & (y_and_bins[:, 1] < 75)), 0] 
-    # y_and_bins.shape
-    # bin50.shape
-    # bin2575.shape
-    # quantiles = [i/10 for i in range(1, 10, 2)]
-    # np.quantile(y_and_bins[:, 0], quantiles)
-    # np.quantile(bin2575, quantiles)
-    # np.quantile(bin20, quantiles)
-    # np.quantile(bin50, quantiles)
-    # np.quantile(bin80, quantiles)
-
-    y_list = [ys, bin2575, bin20, bin50, bin80]
+    y_list = [ys, bin20, bin50, bin80]
     output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
-    title = 'Distributions of all y-values and only bins 25-74, 20, 50, 80'
+    title = 'Distributions of all y-values and only bins 20, 50, 80'
     plot_distributions_with_quantiles(
         y_list, title, False, False, output_filepath)
 
@@ -474,10 +442,11 @@ def process_data(
 
     line_xs = x_y_data_pairs.x1
     ys = scaled_data.test_y
+    xs = scaled_data.test_x
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    y_bin_idx = np.digitize(ys, bins=x_bin_cuts)
+    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
     y_and_bins = np.concatenate(
-        (ys.reshape(-1, 1), y_bin_idx.reshape(-1, 1)), axis=1)
+        (ys.reshape(-1, 1), x_bin_idx.reshape(-1, 1)), axis=1)
 
     x_slice_n = 7
     x_n = line_xs.shape[0]
@@ -530,6 +499,7 @@ def main():
         ('_data04', create_data_04_with_parameters)]
 
     for i in range(len(data_sets)):
+        # i = 3
         data_str = data_sets[i][0]
         mvn_components = data_sets[i][1]()
         data = split_data_with_parameters(mvn_components.cases_data)
