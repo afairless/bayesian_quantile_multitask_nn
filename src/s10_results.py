@@ -74,6 +74,14 @@ class XYDataPairs:
         assert np.allclose(self.x1, self.x2, atol=1e-6)
 
 
+@dataclass
+class XYBins:
+
+    x: np.ndarray
+    y: np.ndarray
+    bin: np.ndarray
+
+
 def load_x_y_coords_for_data_pairs(
     input_path_1: Path, input_path_2: Path,
     input_x_npy_filename: str='line_xs.npy', 
@@ -146,7 +154,7 @@ def get_line_xs(input_path_stem: Path, data_str: str):
 
 
 def bin_y_by_x(
-    xs: np.ndarray, ys: np.ndarray, x_bin_centers: np.ndarray) -> np.ndarray:
+    xs: np.ndarray, ys: np.ndarray, x_bin_centers: np.ndarray) -> XYBins:
     """
     Bin 'xs' where each 'line_xs' specifies the center of each bin, then group
         the bin indices with 'xs' and 'ys'
@@ -166,10 +174,8 @@ def bin_y_by_x(
 
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(x_bin_centers)
     x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
-    x_y_bins = np.concatenate(
-        (xs.reshape(-1, 1), 
-         ys.reshape(-1, 1), 
-         x_bin_idx.reshape(-1, 1)), axis=1)
+
+    x_y_bins = XYBins(xs.reshape(-1), ys, x_bin_idx.reshape(-1))
 
     return x_y_bins
 
@@ -315,15 +321,16 @@ def plot_bin_idx(
 
 
 def select_subarray_by_index(
-    arr: np.ndarray, arr_col_idx: int,
-    total_idx_n: int, select_idx_n: int,
-    include_end_bins: bool=True) -> np.ndarray:
+    x_y_bins: XYBins, total_idx_n: int, select_idx_n: int,
+    include_end_bins: bool=True) -> XYBins:
     """
     Given a 2-D Numpy array 'arr' with a column of indices, select rows that 
         include a subset of the indices
     The subset of indices is selected at approximately evenly spaced intervals
         from the first index (assumed to be zero) to the last index 
         (total_idx_n - 1)
+    UPDATE:  converted function to accept and return XYBins instead of Numpy 
+        arrays, but otherwise, rest of documentation is the same
 
     'arr' - 2-D Numpy array 'arr' with a column of indices
     'arr_col_idx' - index of the column in 'arr' with the indices
@@ -349,6 +356,13 @@ def select_subarray_by_index(
                               [5, 4]])
     """
 
+    # convert XYBins to Numpy array to accommodate code as originally written
+    arr = np.concatenate(
+        (x_y_bins.x.reshape(-1, 1), 
+         x_y_bins.y.reshape(-1, 1), 
+         x_y_bins.bin.reshape(-1, 1)), axis=1)
+    arr_col_idx = 2
+
     # verify that the subset of indices is no greater than the total number of 
     #   indices
     assert select_idx_n <= total_idx_n
@@ -360,11 +374,15 @@ def select_subarray_by_index(
     slice_mask = np.isin(arr[:, arr_col_idx], slice_idx)
     selected_arr = arr[slice_mask, :]
 
-    return selected_arr
+    # convert Numpy array to to XYBins
+    x_y_bins_selected = XYBins(
+        selected_arr[:, 0], selected_arr[:, 1], selected_arr[:, 2])
+
+    return x_y_bins_selected 
 
 
 def plot_density_by_bin(
-    y_and_bins_slices: np.ndarray, bin_col_idx: int,
+    x_y_bin_slices: XYBins,
     vertical_line_x_coord_1: np.ndarray, vertical_line_x_coord_2: np.ndarray,
     output_filepath: Path):
     """
@@ -372,13 +390,13 @@ def plot_density_by_bin(
         lines specified by 'vertical_line_x_coord_1' and 
         'vertical_line_x_coord_2'
 
-    'y_and_bins_slices' - 2-D Numpy array with 'y' values in the first column
+    'x_y_bin_slices' - 2-D Numpy array with 'y' values in the first column
         and bin indices in the second column
-    'bin_col_idx' - index of the column in 'y_and_bins_slices' with the bin 
+    'bin_col_idx' - index of the column in 'x_y_bin_slices' with the bin 
         indices
     """
 
-    bin_idx = np.unique(y_and_bins_slices[:, bin_col_idx]).astype(int)
+    bin_idx = np.unique(x_y_bin_slices.bin).astype(int)
     # reverse order to plot first bin at bottom and last bin at top
     bin_idx = bin_idx[::-1] 
 
@@ -390,7 +408,8 @@ def plot_density_by_bin(
         v_lines_2 = vertical_line_x_coord_2[bin, :]
         assert len(v_lines_1) == len(v_lines_2)
 
-        temp_y = y_and_bins_slices[y_and_bins_slices[:, bin_col_idx] == bin, 1]
+        bin_idx = np.where(x_y_bin_slices.bin == bin)
+        temp_y = x_y_bin_slices.y[bin_idx]
 
         ax[i].set_facecolor('gray')
         _ = sns.kdeplot(
@@ -443,15 +462,13 @@ def process_data_set_pairs(
     x_y_bins = bin_y_by_x(xs, ys, line_xs)
     x_slice_n = 7
     x_n = line_xs.shape[0]
-    bin_col_idx = 2
-    y_and_bins_slices = select_subarray_by_index(
-        x_y_bins, bin_col_idx, x_n, x_slice_n, False)
+    x_y_bin_slices = select_subarray_by_index(
+        x_y_bins, x_n, x_slice_n, False)
     output_filename = (
         x_y_data_pairs.pair_step_label + '_density_by_bin' + data_str + '.png')
     output_filepath = output_path / output_filename
     plot_density_by_bin(
-        y_and_bins_slices, bin_col_idx, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-        output_filepath)
+        x_y_bin_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, output_filepath)
 
     # (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).sum()
     # (np.abs(x_y_data_pairs.y1 - x_y_data_pairs.y2)).mean()
@@ -500,13 +517,16 @@ def process_data(
 
     output_filename = 'x_y_with_bin_color' + data_str + '.png'
     output_filepath = output_path / output_filename
-    plot_bin_idx(xs, ys, x_y_bins[:, 2], output_filepath)
+    plot_bin_idx(x_y_bins.x, x_y_bins.y, x_y_bins.bin, output_filepath)
 
-    bin20 = x_y_bins[x_y_bins[:, 2] == 20, 1]
-    bin50 = x_y_bins[x_y_bins[:, 2] == 50, 1]
-    bin80 = x_y_bins[x_y_bins[:, 2] == 80, 1]
+    bin_idx = np.where(x_y_bins.bin == 20)
+    bin20 = x_y_bins.y[bin_idx]
+    bin_idx = np.where(x_y_bins.bin == 50)
+    bin50 = x_y_bins.y[bin_idx]
+    bin_idx = np.where(x_y_bins.bin == 80)
+    bin80 = x_y_bins.y[bin_idx]
 
-    y_list = [ys, bin20, bin50, bin80]
+    y_list = [x_y_bins.y, bin20, bin50, bin80]
     output_filename = 'y_distributions_bins' + data_str + '.png'
     output_filepath = output_path / output_filename
     title = 'Distributions of all y-values and only bins 20, 50, 80'
@@ -529,64 +549,6 @@ def process_data(
         input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
     process_data_set_pairs(
         data_attr_1, data_attr_2, data_str, scaled_data, output_path, line_xs)
-    # output_filename = (
-    #     x_y_data_pairs.pair_step_label + '_quantiles' + data_str + '.png')
-    # output_filepath = output_path / output_filename
-    # plot_lines_comparison(
-    #     x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-    #     line_label_1=data_attr_1.legend_label, 
-    #     line_label_2=data_attr_2.legend_label,
-    #     output_filepath=output_filepath)
-
-
-    # ys = scaled_data.test_y
-    # xs = scaled_data.test_x
-    # x_y_bins = bin_y_by_x(xs, ys, line_xs)
-    # x_slice_n = 7
-    # x_n = line_xs.shape[0]
-    # y_and_bins_slices = select_subarray_by_index(
-    #     x_y_bins, 2, x_n, x_slice_n, False)
-    # output_filename = (
-    #     x_y_data_pairs.pair_step_label + '_density_by_bin' + data_str + '.png')
-    # output_filepath = output_path / output_filename
-    # plot_density_by_bin(
-    #     y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-    #     output_filepath)
-
-
-    ##################################################
-    ##################################################
-    ##################################################
-    ##################################################
-
-    # data_attr_1 = DataAttr(
-    #     input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
-    # data_attr_2 = DataAttr(
-    #     input_path_stem, 's06_multitask_nn' + data_str, 'Neural Network')
-    # x_y_data_pairs = load_x_y_coords_for_data_pairs(
-    #     data_attr_1.path, data_attr_2.path)
-
-    # output_filename = 's03_s06_quantiles' + data_str + '.png'
-    # output_filepath = output_path / output_filename
-    # plot_lines_comparison(
-    #     x_y_data_pairs.x1, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-    #     line_label_1=data_attr_1.legend_label, 
-    #     line_label_2=data_attr_2.legend_label,
-    #     output_filepath=output_filepath)
-
-
-    # ys = scaled_data.test_y
-    # xs = scaled_data.test_x
-    # x_y_bins = bin_y_by_x(xs, ys, line_xs)
-    # x_slice_n = 7
-    # x_n = line_xs.shape[0]
-    # y_and_bins_slices = select_subarray_by_index(
-    #     x_y_bins, 2, x_n, x_slice_n, False)
-    # output_filename = 's03_s06_density_by_bin' + data_str + '.png'
-    # output_filepath = output_path / output_filename
-    # plot_density_by_bin(
-    #     y_and_bins_slices, x_y_data_pairs.y1, x_y_data_pairs.y2, 
-    #     output_filepath)
 
 
 
