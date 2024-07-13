@@ -135,6 +135,35 @@ def get_line_xs(input_path_stem: Path, data_str: str):
     return line_xs
 
 
+def bin_y_by_x(
+    xs: np.ndarray, ys: np.ndarray, x_bin_centers: np.ndarray) -> np.ndarray:
+    """
+    Bin 'xs' where each 'line_xs' specifies the center of each bin, then group
+        the bin indices with 'xs' and 'ys'
+    """
+
+    # 'xs' and 'ys' should be the same size and essentially one-dimensional
+    assert xs.shape[0] == ys.shape[0]
+
+    # 'xs' and 'ys' can have ndim > 1, but each of those "extra" dimensions 
+    #   should be only '1' so that both arrays are one-dimensional
+    assert (xs.shape[0] + xs.ndim - 1) == np.sum(xs.shape)
+    assert (ys.shape[0] + ys.ndim - 1) == np.sum(ys.shape)
+
+    # 'line_xs' should encompass all 'xs' values
+    assert (xs >= x_bin_centers.min()).all()
+    assert (xs <= x_bin_centers.max()).all()
+
+    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(x_bin_centers)
+    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
+    x_y_bins = np.concatenate(
+        (xs.reshape(-1, 1), 
+         ys.reshape(-1, 1), 
+         x_bin_idx.reshape(-1, 1)), axis=1)
+
+    return x_y_bins
+
+
 def plot_lines_comparison(
     line_xs: np.ndarray=np.array([]), 
     line_ys_1: np.ndarray=np.array([]), 
@@ -407,16 +436,11 @@ def process_data(
         y_list, title, True, False, output_filepath)
 
     line_xs = get_line_xs(input_path_stem, data_str)
-    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
-    x_y_bins = np.concatenate(
-        (xs.reshape(-1, 1), 
-         ys.reshape(-1, 1), 
-         x_bin_idx.reshape(-1, 1)), axis=1)
+    x_y_bins = bin_y_by_x(xs, ys, line_xs)
 
     output_filename = 'x_y_with_bin_color' + data_str + '.png'
     output_filepath = output_path / output_filename
-    plot_bin_idx(xs, ys, x_bin_idx, output_filepath)
+    plot_bin_idx(xs, ys, x_y_bins[:, 2], output_filepath)
 
     bin20 = x_y_bins[x_y_bins[:, 2] == 20, 0]
     bin50 = x_y_bins[x_y_bins[:, 2] == 50, 0]
@@ -483,12 +507,7 @@ def process_data(
     line_xs = x_y_data_pairs.x1
     ys = scaled_data.test_y
     xs = scaled_data.test_x
-    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
-    x_y_bins = np.concatenate(
-        (xs.reshape(-1, 1), 
-         ys.reshape(-1, 1), 
-         x_bin_idx.reshape(-1, 1)), axis=1)
+    x_y_bins = bin_y_by_x(xs, ys, line_xs)
 
     x_slice_n = 7
     x_n = line_xs.shape[0]
