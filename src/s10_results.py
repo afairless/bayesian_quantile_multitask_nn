@@ -104,6 +104,37 @@ def load_x_y_coords_for_data_pairs(
     return x_y_data_pairs
 
 
+def get_line_xs(input_path_stem: Path, data_str: str):
+    """
+    This function exists mainly to clarify and streamline the code that calls 
+        it, even though it introduces some redundancy in that code
+    Specifically, parts of the calling code analyze comparisons between data 
+        sets and other parts rely on only a single data set; the latter needs
+        only the 'line_xs' variable, which is already being called by code that
+        pairs two data sets and benefits from checking that the two data sets'
+        versions of 'line_xs' match
+    However, to cleanly separate single-data-set code from the two-data-sets 
+        code, this function wraps the two-data-sets calls so that the returned
+        variables cannot be used; ergo, the two-data-sets code must call these
+        functions again and not depend on the code in this funtion, which 
+        precedes the one-data-set code
+    Yes, the rationale is a bit odd, but it beats the alternatives for now; 
+        the better solution will probably be to formally separate the 
+        one-data-set and two-data-set code into separate functions, but it's
+        too soon to do that yet
+    """
+
+    data_attr_1 = DataAttr(
+        input_path_stem, 's03_bayes_stan' + data_str, 'Bayesian Linear')
+    data_attr_2 = DataAttr(input_path_stem, 's04_quantile' + data_str, 'Linear')
+
+    x_y_data_pairs = load_x_y_coords_for_data_pairs(
+        data_attr_1.path, data_attr_2.path)
+    line_xs = x_y_data_pairs.x1
+
+    return line_xs
+
+
 def plot_lines_comparison(
     line_xs: np.ndarray=np.array([]), 
     line_ys_1: np.ndarray=np.array([]), 
@@ -356,6 +387,48 @@ def process_data(
     # s03_fit_df = pl.read_parquet(filepath)
 
 
+    # for a "real" problem, it would make more sense to look only at the test
+    #   to evaluate results (or, at least, look at train and test data 
+    #   separately), but in this case, since all the data is artificially 
+    #   generated from the same distribution, I'll just lump it all together for
+    #   convenience
+    # ys = scaled_data.test_y
+    # xs = scaled_data.test_x
+    ys = np.concatenate(
+        [scaled_data.train_y, scaled_data.valid_y, scaled_data.test_y])
+    xs = np.concatenate(
+        [scaled_data.train_x, scaled_data.valid_x, scaled_data.test_x])
+
+    y_list = [ys, scaled_data.test_y]
+    output_filename = 'y_distributions' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    title = 'Distributions of all y-values and only test y-values'
+    plot_distributions_with_quantiles(
+        y_list, title, True, False, output_filepath)
+
+    line_xs = get_line_xs(input_path_stem, data_str)
+    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
+    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
+    x_y_bins = np.concatenate(
+        (xs.reshape(-1, 1), 
+         ys.reshape(-1, 1), 
+         x_bin_idx.reshape(-1, 1)), axis=1)
+
+    output_filename = 'x_y_with_bin_color' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    plot_bin_idx(xs, ys, x_bin_idx, output_filepath)
+
+    bin20 = x_y_bins[x_y_bins[:, 2] == 20, 0]
+    bin50 = x_y_bins[x_y_bins[:, 2] == 50, 0]
+    bin80 = x_y_bins[x_y_bins[:, 2] == 80, 0]
+    y_list = [ys, bin20, bin50, bin80]
+    output_filename = 'y_distributions_bins' + data_str + '.png'
+    output_filepath = output_path / output_filename
+    title = 'Distributions of all y-values and only bins 20, 50, 80'
+    plot_distributions_with_quantiles(
+        y_list, title, False, False, output_filepath)
+
+
     ##################################################
 
     data_attr_1 = DataAttr(
@@ -374,46 +447,10 @@ def process_data(
 
 
     line_xs = x_y_data_pairs.x1
-    # ys = scaled_data.test_y
-    # I need more samples in each bin, so since data is generated and I know 
-    #   that it all comes from the same distribution, anyway, I'll just use all 
-    #   of it
-    ys = np.concatenate(
-        [scaled_data.train_y, scaled_data.valid_y, scaled_data.test_y])
-    xs = np.concatenate(
-        [scaled_data.train_x, scaled_data.valid_x, scaled_data.test_x])
-
-    y_list = [ys, scaled_data.test_y]
-    output_filename = 'y_distributions' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    title = 'Distributions of all y-values and only test y-values'
-    plot_distributions_with_quantiles(
-        y_list, title, True, False, output_filepath)
-
-    x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
-    x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
-    y_and_bins = np.concatenate(
-        (ys.reshape(-1, 1), x_bin_idx.reshape(-1, 1)), axis=1)
-
-    output_filename = 'x_y_with_bin_color' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    plot_bin_idx(xs, ys, x_bin_idx, output_filepath)
-
-    bin20 = y_and_bins[y_and_bins[:, 1] == 20, 0]
-    bin50 = y_and_bins[y_and_bins[:, 1] == 50, 0]
-    bin80 = y_and_bins[y_and_bins[:, 1] == 80, 0]
-    y_list = [ys, bin20, bin50, bin80]
-    output_filename = 'y_distributions_bins' + data_str + '.png'
-    output_filepath = output_path / output_filename
-    title = 'Distributions of all y-values and only bins 20, 50, 80'
-    plot_distributions_with_quantiles(
-        y_list, title, False, False, output_filepath)
-
-
     x_slice_n = 7
     x_n = line_xs.shape[0]
     y_and_bins_slices = select_subarray_by_index(
-        y_and_bins, 1, x_n, x_slice_n, False)
+        x_y_bins, 2, x_n, x_slice_n, False)
 
     output_filename = 's03_s04_density_by_bin' + data_str + '.png'
     output_filepath = output_path / output_filename
@@ -422,6 +459,9 @@ def process_data(
         output_filepath)
 
 
+    ##################################################
+    ##################################################
+    ##################################################
     ##################################################
 
     data_attr_1 = DataAttr(
@@ -445,13 +485,15 @@ def process_data(
     xs = scaled_data.test_x
     x_bin_cuts = get_bin_cuts_for_regular_1d_grid(line_xs)
     x_bin_idx = np.digitize(xs, bins=x_bin_cuts)
-    y_and_bins = np.concatenate(
-        (ys.reshape(-1, 1), x_bin_idx.reshape(-1, 1)), axis=1)
+    x_y_bins = np.concatenate(
+        (xs.reshape(-1, 1), 
+         ys.reshape(-1, 1), 
+         x_bin_idx.reshape(-1, 1)), axis=1)
 
     x_slice_n = 7
     x_n = line_xs.shape[0]
     y_and_bins_slices = select_subarray_by_index(
-        y_and_bins, 1, x_n, x_slice_n, False)
+        x_y_bins, 2, x_n, x_slice_n, False)
 
     output_filename = 's03_s06_density_by_bin' + data_str + '.png'
     output_filepath = output_path / output_filename
@@ -491,6 +533,12 @@ def main():
 
     input_path_stem = Path.cwd() / 'output'
     output_path = Path.cwd() / 'output' / 's10_results'
+
+    bkgd_colors = [
+        'gray', 'dimgray', 'lightgray', 'darkgray', 'gainsboro', 'sienna', 
+        'peru', 'linen', 'burlywood', 'tan', 'wheat', 'goldenrod', 
+        'darkgoldenrod', 'palegoldenrod', 'khaki', 'darkkhaki', 'beige',
+        'lightslategray', 'slategray', 'lavender']
 
     data_sets = [
         ('_data01', create_data_01_with_parameters),
