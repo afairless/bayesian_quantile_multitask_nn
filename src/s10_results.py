@@ -11,6 +11,7 @@ import seaborn as sns
 
 from sklearn.neighbors import KernelDensity
 
+BKGD_COLOR = 'darkgray'
 
 
 if __name__ == '__main__':
@@ -199,7 +200,7 @@ def plot_lines_comparison(
     assert line_ys_1.shape[1] == line_ys_2.shape[1]
 
     ax = plt.axes()
-    ax.set_facecolor('gray')
+    ax.set_facecolor(BKGD_COLOR)
 
     for i in range(line_ys_1.shape[1]):
         # add 'label' for legend only once
@@ -411,7 +412,7 @@ def plot_density_by_bin(
         bin_idx = np.where(x_y_bin_slices.bin == bin)
         temp_y = x_y_bin_slices.y[bin_idx]
 
-        ax[i].set_facecolor('gray')
+        ax[i].set_facecolor(BKGD_COLOR)
         _ = sns.kdeplot(
             ax=ax[i], data=temp_y, fill=True, alpha=1.0, linewidth=1.5,
             bw_adjust=1)
@@ -572,12 +573,6 @@ def main():
 
     input_path_stem = Path.cwd() / 'output'
     output_path = Path.cwd() / 'output' / 's10_results'
-
-    bkgd_colors = [
-        'gray', 'dimgray', 'lightgray', 'darkgray', 'gainsboro', 'sienna', 
-        'peru', 'linen', 'burlywood', 'tan', 'wheat', 'goldenrod', 
-        'darkgoldenrod', 'palegoldenrod', 'khaki', 'darkkhaki', 'beige',
-        'lightslategray', 'slategray', 'lavender']
 
     data_sets = [
         ('_data01', create_data_01_with_parameters),
