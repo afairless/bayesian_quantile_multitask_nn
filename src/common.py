@@ -1,6 +1,7 @@
 
 import time
 import torch
+import shutil
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
@@ -138,6 +139,33 @@ def print_loop_status_with_elapsed_time(
 
         print('Elapsed time: {}'.format(seconds_to_formatted_time_string(
             elapsed_time)))
+
+
+##################################################
+# FUNCTIONS FOR HANDLING PROJECT STRUCTURE
+##################################################
+
+def copy_image_files_to_notebook(notebook_path: Path=Path.cwd() / 'notebooks'):
+    """
+    Notebooks can not access files saved outside of their directory, so copy
+        image files called by notebook markdown cells into the notebook 
+        directory with the same directory structure as in their original 
+        locations
+    """
+
+    notebook_filepaths = list(notebook_path.glob('*.py'))
+    notebook_txts = [read_text_file(e) for e in notebook_filepaths]
+    notebook_txts_flat = [e for sublist in notebook_txts for e in sublist]
+
+    image_sub_str = '![image]('
+    image_path_txts = [e for e in notebook_txts_flat if image_sub_str in e]
+    image_filestems = [e.split(image_sub_str)[1][2:-1] for e in image_path_txts]
+    image_filepaths = [Path.cwd() / e for e in image_filestems]
+    copy_filepaths = [notebook_path / e for e in image_filestems]
+
+    for i, e in enumerate(image_filepaths):
+        copy_filepaths[i].parent.mkdir(exist_ok=True, parents=True)
+        shutil.copy(e, copy_filepaths[i])
 
 
 ##################################################

@@ -1,6 +1,7 @@
 
 /input/
 /output*/
+notebooks/output*/
 .vscode
 
 # https://github.com/github/gitignore/blob/main/Python.gitignore
