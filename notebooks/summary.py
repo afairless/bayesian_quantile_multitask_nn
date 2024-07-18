@@ -1,24 +1,6 @@
-# # Q
+# # Multi-Number Predictions
 
-# ## I
-
-# + [markdown]
-'''
-Oftentimes, when we're making predictions from a model, a single number -- a 
-point estimate -- isn't enough.  For example, if we predict that the price of a 
-house is $407,833.00, are we really absolutely sure that that is exactly what
-the house will sell for, down to the penny?  Well, no, of course not.  Maybe
-it'll sell for $410,000.  Or maybe just for $399,000.  That doesn't mean our 
-model was "wrong", exactly, because both of those prices are fairly close to
-our prediction.  Really, it means that that one-number prediction was rather
-bare-bones; it didn't give us a lot of information.  We'd often like to have
-much more information from our predictions, and we can get that with a Bayesian 
-model that offers a full probability distribution as a prediction.  For our 
-house price example above, it might say that there's a 5% chance that the house
-will sell at $407,833, a 2% chance that it'll sell at $407,000, a 1% chance that
-it'll sell at $406,000, and so on until all our probabilities add up to 100%.
-'''
-# -
+# ### Approaches for getting more information out of your models
 
 # ## Full Bayesian vs. Quantile Regression:  Linear Data
 
@@ -29,10 +11,11 @@ predictions, we can bring to bear the full suite of tools from [Bayesian
 analysis](http://www.stat.columbia.edu/~gelman/book/).  Sometimes, though, we
 need shortcuts:  using the full Bayesian model may exceed our computational
 limitations, or we may not have the tooling and infrastructure to readily 
-productionize the model.  In such cases, [quantile regression](quantile 
-regression) can be a convenient alternative.
+productionize it.  In such cases, [quantile regression](
+https://en.wikipedia.org/wiki/Quantile_regression) can be a convenient 
+alternative.
 
-Quantile regression lets us predict one or a multitude of chosen [quantiles](
+Quantile regression lets us predict a chosen [quantile](
 https://en.wikipedia.org/wiki/Quantiles) (e.g., the median, the 80th percentile)
 of our predicted outcome variable's distribution.  This distribution isn't 
 exactly the same as the predicted posterior distribution of a full Bayesian
@@ -88,7 +71,7 @@ Bayesian linear regression predictions on a curvier data set.
 
 And here's the quantile regression predictions for the same data.
 
-![image](./output/s04_quantile_data03/quantile_plot_x1.png)
+![image](./output/s04_quantile_data02/quantile_plot_x1.png)
 
 And here they are superimposed.
 
@@ -107,13 +90,17 @@ for several bins.
 
 Of course, this isn't surprising.  If we really want our linear models to fit
 non-linear data, we should make them more flexible by, for example, adding
-polynomial terms or (when we have >1 predictor) interaction terms or the like.
+[polynomial terms](https://en.wikipedia.org/wiki/Polynomial_regression) or 
+(when we have >1 predictor) [interaction](
+https://stattrek.com/multiple-regression/interaction) [terms](
+https://quantifyinghealth.com/why-and-when-to-include-interactions-in-a-regression-model/) 
+or the like.
 
 An alternative is to use more flexible modeling algorithms like tree ensembles 
 or neural networks.  The Python package [scikit-learn](
 https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_quantile.html)
 has some convenient methods for doing this, but I chose to create my own
-implementation in PyTorch.
+implementation in [PyTorch](https://pytorch.org/).
 
 While we can continue to create one model per predicted quantile, it might be
 more efficient for both training and inference to incorporate all the predicted
@@ -122,11 +109,11 @@ https://arxiv.org/abs/1706.05098).
 
 Here are the results from one training run of the model:
 
-![image](./output/s10_results/s03_s04_density_by_bin_data02.png)
+![image](./output/s06_multitask_nn_data02_1/model_plot_x1.png)
 
 Clearly, the more flexible neural network model is adhering more closely to the
 deciles condtional on *x*.  We can also see this when we compare the results to
-the Bayesian linear regression.
+the Bayesian linear regression decile predictions.
 
 ![image](./output/s10_results/s03_s06_quantiles_data02.png)
 
@@ -136,3 +123,17 @@ While the neural network results aren't perfect, they clearly track the Gaussian
 distributions in the x-bins more closely than the linear results do.
 '''
 # -
+
+# ## Summary
+
+# + [markdown]
+'''
+In summary, we sometimes want more information from our model than just a single
+point estimate of the response variable's mean or median; we might want to know
+more about the broader range of the prediction.  Bayesian models with 
+informative priors are often our best solution, because they can provide us with 
+a full posterior predictive distribution.  But they do have their drawbacks, 
+including computational intensity.  So a "compromise" solution might be quantile
+regression, which we implemented for a linear model and for a more flexible
+neural network.
+'''
