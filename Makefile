@@ -44,3 +44,9 @@ step10:
 	$(CONDA_ACTIVATE) distribution_nn01
 	python src/s10_results.py
 	conda deactivate
+	
+notebook:
+	python -c "from src.common import copy_image_files_to_notebook; copy_image_files_to_notebook()"
+	$(CONDA_ACTIVATE) jupyter_data_processing02
+	jupytext --to notebook notebooks/*.py
+	conda deactivate
