@@ -53,7 +53,6 @@ notebook:
 	jupyter nbconvert --to html notebooks/*.ipynb
 	conda deactivate
 	
-notebook_markdown:
-	$(CONDA_ACTIVATE) jupyter_data_processing02
-	jupyter nbconvert --to markdown notebooks/*.ipynb
-	conda deactivate
+readme:
+	cp notebooks/summary.md README.md
+	sed -i 's/!\[image\](\.\/output/!\[image\](\.\/notebooks\/output/g' README.md
