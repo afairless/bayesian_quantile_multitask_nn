@@ -63,9 +63,9 @@ together.
 '''
 The data for our examples above was generated from a linear model, so the 
 Bayesian linear regression and quantile linear regression models readily fit to 
-the data very well.  Our data is often more complicated, so our first attempt 
-at fitting a linear model might not work well.  Here's an example of 
-Bayesian linear regression predictions on a curvier data set.
+the data very well.  But we often have data that is more complicated, so our 
+first attempt at fitting a linear model might not work so well.  Here's an 
+example of Bayesian linear regression predictions on a curvier data set.
 
 ![image](./output/s03_bayes_stan_data02/quantile_plot_x1.png)
 
@@ -79,12 +79,12 @@ And here they are superimposed.
 
 Clearly, the linear models are having difficulties.  Noticeably, the quantile
 regression models choose slopes so that the predictions of the deciles 
-separate, or fan out, while one looks from low x-values (left) to high x-values
-(right).  That divergence might mean that each adjacent pair of deciles 
-actually does bound ~10% of the data points overall, but the decile predictions
-are clearly poor conditional on *x*.  We can see this even more clearly below
-where the Gaussian distributions and the decile predictions markedly diverge
-for several bins.
+separate, or fan out, as one looks from low x-values (left) to high x-values
+(right).  That diverging adjustment might mean that each adjacent pair of 
+deciles actually does bound ~10% of the data points overall, but those 
+predictions are clearly poor conditional on *x*.  We can see this even more 
+clearly below where the Gaussian distributions and the decile predictions 
+markedly diverge for several bins.
 
 ![image](./output/s10_results/s03_s04_density_by_bin_data02.png)
 
@@ -120,7 +120,7 @@ the Bayesian linear regression decile predictions.
 ![image](./output/s10_results/s03_s06_density_by_bin_data02.png)
 
 While the neural network results aren't perfect, they clearly track the Gaussian
-distributions in the x-bins more closely than the linear results do.
+distribution in each x-bin more closely than the linear results do.
 '''
 # -
 
