@@ -92,7 +92,7 @@ regression models choose slopes so that the predictions of the deciles
 separate, or fan out, as one looks from low x-values (left) to high x-values
 (right).  That diverging adjustment might mean that each adjacent pair of 
 deciles actually does bound ~10% of the data points overall, but those 
-predictions are clearly poor conditional on *x*.  We can see this even more 
+are clearly poor predictions conditional on *x*.  We can see this even more 
 clearly below where the Gaussian distributions and the decile predictions 
 markedly diverge for several bins.
 
@@ -109,8 +109,10 @@ or the like.
 An alternative is to use more flexible modeling algorithms like tree ensembles 
 or neural networks.  The Python package [scikit-learn](
 https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_quantile.html)
-has some convenient methods for doing this, but I chose to create my own
-implementation in [PyTorch](https://pytorch.org/).
+has some convenient methods for doing this, but I chose to create my [own
+implementation](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s06_multitask_nn.py) 
+in [PyTorch](https://pytorch.org/).
 
 While we can continue to [create one model per predicted quantile](
 https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s05_singletask_nn.py), 
