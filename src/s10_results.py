@@ -336,7 +336,7 @@ def select_subarray_by_index(
     'arr' - 2-D Numpy array 'arr' with a column of indices
     'arr_col_idx' - index of the column in 'arr' with the indices
     'total_idx_n' - total number of indices; needed as a parameter because
-        arr[:, arr_col_idx] may not include all indices
+        arr[:, arr_col_idx] might not include all indices
     'select_idx_n' - number of indices to include in the subset
 
     Example:
@@ -375,7 +375,7 @@ def select_subarray_by_index(
     slice_mask = np.isin(arr[:, arr_col_idx], slice_idx)
     selected_arr = arr[slice_mask, :]
 
-    # convert Numpy array to to XYBins
+    # convert Numpy array to XYBins
     x_y_bins_selected = XYBins(
         selected_arr[:, 0], selected_arr[:, 1], selected_arr[:, 2])
 
