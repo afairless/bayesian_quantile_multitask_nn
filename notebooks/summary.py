@@ -25,28 +25,38 @@ likelihood overwhelm the prior's effects on the posterior, the predicted
 quantiles can be reasonably close to the corresponding positions of the 
 posterior.
 
-To illustrate this similarity, I generated some positively correlated bivariate 
-data with Gaussian noise in the response variable, so that I could run some
-simple regression models on it.  Below is a scatterplot of a sample of the data
-along with every decile (from the 10th to the 90th) of the predicted posterior 
-distribution of a full Bayesian linear model with weak priors on its parameters.
+To illustrate this similarity, I [generated](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s01_generate_data.py) 
+some positively correlated bivariate data with Gaussian noise in the response 
+variable, so that I could run some simple regression models on it.  Below is a 
+scatterplot of a sample of the data along with every decile (from the 10th to 
+the 90th) of the predicted posterior distribution of a [full Bayesian linear 
+model](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s03_bayes_stan/bayes_stan.py) 
+with [weak priors](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/stan_code/s03_bayes_stan.stan) 
+on its parameters.
 
 ![image](./output/s03_bayes_stan_data03/quantile_plot_x1.png)
 
-Next is a scatterplot of the same data along with every decile from quantile
-regression models, where each model predicts a single decile.
+Next is a scatterplot of the same data along with every decile from [quantile
+regression models](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s04_quantile.py), 
+where each model predicts a single decile.
 
 ![image](./output/s04_quantile_data03/quantile_plot_x1.png)
 
-The two plots appear to be very similar.  We can juxtapose the Bayesian and
-non-Bayesian predictions on a single plot, so that we can compare them more
-carefully.
+The two plots appear to be very similar.  We can [juxtapose the Bayesian and
+non-Bayesian predictions on a single plot](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s10_results.py), 
+so that we can compare them more carefully.
 
 ![image](./output/s10_results/s03_s04_quantiles_data03.png)
 
 The two sets of predictions aren't identical, but they're quite close.  We can
 also look at slices along the x-axis, so that we can see the distributions and
-the two sets of predictions.  For this purpose, we group the data into 100 bins
+the two sets of predictions.  For this purpose, we [group the data into 100 
+bins](https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s10_results.py)
 and show just a few bins along the x-axis.
 
 ![image](./output/s10_results/s03_s04_density_by_bin_data03.png)
@@ -102,10 +112,12 @@ https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_qu
 has some convenient methods for doing this, but I chose to create my own
 implementation in [PyTorch](https://pytorch.org/).
 
-While we can continue to create one model per predicted quantile, it might be
-more efficient for both training and inference to incorporate all the predicted
-deciles into a single model.  We can do this with [multi-task learning](
-https://arxiv.org/abs/1706.05098).  
+While we can continue to [create one model per predicted quantile](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s05_singletask_nn.py), 
+it might be more efficient for both training and inference to incorporate all 
+the predicted deciles [into a single model](
+https://github.com/afairless/bayesian_quantile_multitask_nn/blob/main/src/s06_multitask_nn.py). 
+We can do this with [multi-task learning](https://arxiv.org/abs/1706.05098).  
 
 Here are the results from one training run of the model:
 
@@ -136,4 +148,7 @@ a full posterior predictive distribution.  But they do have their drawbacks,
 including computational intensity.  So a "compromise" solution might be quantile
 regression, which we implemented for a linear model and for a more flexible
 neural network.
+
+Go [here for the code](
+https://github.com/afairless/bayesian_quantile_multitask_nn/tree/main).
 '''
