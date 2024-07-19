@@ -49,4 +49,11 @@ notebook:
 	python -c "from src.common import copy_image_files_to_notebook; copy_image_files_to_notebook()"
 	$(CONDA_ACTIVATE) jupyter_data_processing02
 	jupytext --to notebook notebooks/*.py
+	jupyter nbconvert --to markdown notebooks/*.ipynb
+	jupyter nbconvert --to html notebooks/*.ipynb
+	conda deactivate
+	
+notebook_markdown:
+	$(CONDA_ACTIVATE) jupyter_data_processing02
+	jupyter nbconvert --to markdown notebooks/*.ipynb
 	conda deactivate
