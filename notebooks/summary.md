@@ -1,6 +1,6 @@
-# Multi-Number Predictions
+# Beyond Point Estimates
 
-### Approaches for getting more information out of your models
+### Ways to get more out of your models
 
 ## Full Bayesian vs. Quantile Regression:  Linear Data
 
